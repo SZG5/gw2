@@ -1,0 +1,274 @@
+<html>
+<head>
+<title>GW2 Guild Info Viewer</title>
+<script src="Assets/jquery-3.4.1.min.js"></script>
+<script src="Assets/bootstrap.bundle.min.js"></script>
+<script src="Assets/bootstrap-table.min.js"></script>
+<link href="Assets/bootstrap.min.css" rel="stylesheet">
+<link href="Assets/bootstrap-table.min.css" rel="stylesheet">
+<style>
+body {
+	background: #000;
+	color: #d5d4d4;
+	margin: auto;
+	width: 85%;
+}
+#permalink, #api-key {width:80%}
+.user{
+	background: ghostwhite;
+	color: #000;
+	padding: 0 5px;
+}
+.timestamp{
+	float:right;
+}
+.isLeader {
+	color: #007bff;
+	cursor: pointer;
+}
+.bootstrap-table .fixed-table-container .fixed-table-body {height:unset}
+#guild-ids span:not(.isLeader):after {
+  content: " - You don't have leadership permission for this guild";
+}
+/* Change tab color */
+.nav-tabs .nav-item.show .nav-link, .nav-tabs .nav-link.active {
+    color: #fff;
+    background-color: #787878;
+    border-color: #787878 #787878 #000;
+}
+.nav-tabs .nav-link:focus, .nav-tabs .nav-link:hover {
+    border-color: #323232 #323232 #787878;
+}
+.nav-tabs {
+    border-bottom: 1px solid #787878
+}
+/* Item Color Code */
+.junk {color:#AAA;}
+/*.basic {color:#000;}*/
+.fine {color:#62A4DA;}
+.masterwork {color:#1a9306;}
+.rare {color:#fcd00b;}
+.exotic {color:#ffa405;}
+.ascended {color:#fb3e8d;}
+</style>
+
+<script>
+$(function() {
+	// Allow a quick link for the user to save
+	if (window.location.search.split('?access_token=')[1]!=undefined) {
+		localStorage.setItem('API_key', window.location.search.split('?access_token=')[1]);
+	}
+	if (localStorage.getItem('cookieWarning')) {
+		$('#deleteDataWarning').remove();
+	}
+	if (localStorage.getItem('API_key')!=undefined) {
+		var api_key = localStorage.getItem('API_key');
+		console.log('Guild Wars 2 API key: ' + api_key);
+		$('#api-key').val(api_key);
+		$('#permalink').val(window.location.href.split('?')[0]+"?access_token="+api_key);
+		getUserInfo(api_key);
+	}
+	// Set up the enter key for the text field
+	$('#api-key').keyup(function (e) {
+		if (e.keyCode === 13) {
+			setAPIkey();
+		}
+	});
+});
+
+function setAPIkey() {
+	if($('#api-key').val()!==''){
+		localStorage.setItem('API_key', $('#api-key').val());
+		var api_key = localStorage.getItem('API_key');
+		getUserInfo(api_key)
+		$('#permalink').val(window.location.href.split('?')[0]+"?access_token="+api_key);
+		$('#api_status').text('Key Added!').css('color','green');
+		} else {
+		$('#api_status').text('No Key Added.').css('color','red');
+	}
+}
+
+function removeAPIkey() {
+	localStorage.removeItem('API_key');
+	$('#api_status').text('Key Removed!').css('color','blue');
+}
+
+function getUserInfo(api_key) {
+	// Clear old info
+	$('#guild-ids').empty().append('<li><span>No Guild</span></li><li><span>No Guild</span></li><li><span>No Guild</span></li><li><span>No Guild</span></li><li><span>No Guild</span></li>');
+	// Get user info
+	$.get( "https://api.guildwars2.com/v2/account?access_token="+api_key, function( data ) {
+		$('#username').text(data.name);
+		// Gets all the guilds
+		$.each(data.guilds, function( index, value ) {
+			$.get( "https://api.guildwars2.com/v2/guild/"+value+"?access_token="+api_key, function( guild ) {
+				// Unfortunately doesnt order like the in-game display but atleast the order is consistent. 
+				$('#guild-ids li:eq('+index+') span').attr('guild-id',value).text(guild.name);
+				// Now activate the ones with guild-leader permission
+				if (data.guild_leader.includes(value)===true) {
+					$('#guild-ids li:eq('+index+') span').addClass('isLeader').on( "click", function() {
+						// Prevents repeat calls for the same guild
+						if($(this).attr('used')!=='true'){
+							$('[used]').removeAttr('used');
+							getGuildInfo(api_key,value);
+							$(this).attr('used','true');
+						}
+					});
+				}
+			});
+		});
+	}).done(function( data ) {
+		/* Wait and then check if theres a guild to load */
+		setTimeout(function(){	
+			if ($('.isLeader').length>0) {
+				getGuildInfo(api_key,$('.isLeader').first().attr('guild-id'));
+			}
+		}, 1000);
+	});
+}
+function getGuildInfo(api_key, guild_id) {
+	/* Clear Old Info */
+	$('#stash-log, #user-log, #guild-ranks, #guild-members').empty();
+	/* Guild Log */
+	$.get("https://api.guildwars2.com/v2/guild/"+guild_id+"/log?access_token="+api_key,function(data){
+		$.each(data, function( index, value ) {
+			// console.log( index + ": " + value.type);
+			/*	Types: joined | invited | kick | rank_changed | treasury | stash | motd | upgrade */
+			
+			/* Handle the Userlog changes */
+			if (value.type==="kick") {
+				/* Convert text if they left */
+				if (value.user===value.kicked_by) {
+					$('#user-log').append("<div class=\"quit-users\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> has left the guild. <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
+				} else {
+					$('#user-log').append("<div class=\"kicked-users\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> was kicked by <span class=\"user\">"+value.kicked_by+"</span> <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
+				}
+				
+			}
+			if (value.type==="invited") {
+				$('#user-log').append("<div class=\"invited-users\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> was invited by <span class=\"user\">"+value.invited_by+"</span> <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
+			}
+			if (value.type==="joined"){
+				$('#user-log').append("<div class=\"joined\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> has joined the guild. <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+			}
+			if (value.type==="rank_change") {
+				$('#user-log').append("<div class=\"rank-changed\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> <span title=\"Former rank\">"+value.old_rank+"</span> to <span title=\"New rank\">"+value.new_rank+"</span> changed by <span class=\"user\">"+value.changed_by+"</span> <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+
+			}
+			
+			/* Deal with the Stash */
+			if (value.type==="stash") {
+				if (value.operation==="withdraw") {
+					if (value.coins>0) {
+						$('#stash-log').append("<div class=\"withdraw\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> withdrew "+goldConvert(value.coins)+" <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+					} else {
+						$.get( "https://api.guildwars2.com/v2/items/"+value.item_id, function( data ) {
+							$('#stash-log').append("<div class=\"withdraw\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> withdrew <span class=\""+data.rarity.toLowerCase()+"\">["+data.name+"]</span> x "+value.count+" <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+						});
+					}
+				} else if (value.operation==="deposit") {
+					if (value.coins>0) {
+						$('#stash-log').append("<div class=\"deposit\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> deposited "+goldConvert(value.coins)+" <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+					} else {
+						$.get( "https://api.guildwars2.com/v2/items/"+value.item_id, function( data ) {
+							$('#stash-log').append("<div class=\"deposit\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> deposited <span class=\""+data.rarity.toLowerCase()+"\">["+data.name+"]</span> x "+value.count+" <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+						});
+					}
+				} else {
+					/* Only thing left is move */
+					//console.log(value);
+				}
+			}
+		});
+	}).done(function( data ) {
+		/* Sometimes the stuff gets out of wack */
+		//console.log('Done');
+		setTimeout(function(){
+			$('#stash-log').append($('#stash-log div').sort(function(a,b){
+				return a.getAttribute('data-sort')-b.getAttribute('data-sort');
+			}));
+			$('#user-log').append($('#user-log div').sort(function(a,b){
+				return a.getAttribute('data-sort')-b.getAttribute('data-sort');
+			}));
+		}, 2000);
+	});
+	/* Guild Members */
+	$.get("https://api.guildwars2.com/v2/guild/"+guild_id+"/members?access_token="+api_key,function(data){
+		$('#guild-members').append('<table id="guild-members-table" class="table table-dark table-striped table-hover bootstrap-table" data-search="true" data-sort-order="desc" data-sort-name="user"><thead><tr><th data-field="name" data-sortable="false">User</th> <th data-field="rank" data-sortable="false">Rank</th><th data-field="joined" data-sortable="false">Date</th></tr></thead><tbody></tbody></table>')
+		// Not needed but keep for later
+		/* $.each(data, function( index, value ) {
+			$('#guild-members-table tbody').append("<tr class=\"members\"> <td class=\"user\">"+value.name+"</td> -- <td class=\"rank\">"+value.rank+"</td> <td class=\"timestamp\">"+new Date(value.joined)+"</td><tr>");
+		}); */
+		$.each(data, function( index, value ) {
+			value.joined = new Date(value.joined);
+		});
+		$('#guild-members-table').bootstrapTable({data: data})
+	});
+	/* Guild Ranks */
+	$.get("https://api.guildwars2.com/v2/guild/"+guild_id+"/ranks?access_token="+api_key,function(data){
+		// Sort data so that the ranks are in order 
+		data = data.sort((a, b) => (a.order > b.order) ? 1 : -1);
+		//FIXME: Might add colors to the guild members names 
+		// Red, Orange, Green, Blue, Yellow, Green/Blue, Pink, Purple, Brown, Grey
+		var colors = ['#E15759','#F28E2B','#59A14F','#4E79A7','#EDC948','#76B7B2','#FF9DA7','#B07AA1','#9C755F','#BAB0AC'];
+		$.each(data, function( index, value ) {
+			$('#guild-ranks').append(value.order+' <span class="rank-'+value.order+'">'+value.id+'<br>');
+			
+		});
+	});
+}
+function goldConvert(amount) {
+	var g = Math.floor(amount/10000);
+	var s	= Math.floor((amount%10000)/100);
+	var c = amount%100;
+
+	return (((g>0) ? g+"g " : "")+((s>0) ? s+"s " : "")+((c>0) ? c+"c " : ""));
+}
+</script>
+</head>
+<body>
+
+<h1>Welcome, <span id="username">[USER]</span>!</h1>
+<div id="deleteDataWarning" class="alert alert-danger alert-dismissible fade show" role="alert">We use cookies to store the your API key please make sure to delete data on exit if using a shared PC.<button type="button" class="close" data-dismiss="alert" aria-label="Close" onclick="localStorage.setItem('cookieWarning', true);"><span aria-hidden="true">&times;</span></button>
+</div>
+
+<span id="api_status"></span><br>
+API KEY: <input id="api-key"></input> <button onclick="setAPIkey();">Save</button> <button onclick="removeAPIkey();">Remove</button><br>
+Permalink: <input id="permalink" disabled></input>
+<br>
+<br>
+<h1>Guilds</h1>
+<ol id="guild-ids">
+	<li><span>No Guild</span></li>
+	<li><span>No Guild</span></li>
+	<li><span>No Guild</span></li>
+	<li><span>No Guild</span></li>
+	<li><span>No Guild</span></li>
+</ol>
+
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+	<li class="nav-item">
+		<a class="nav-link active" id="stash-log-tab" data-toggle="tab" href="#stash-log" role="tab" aria-controls="stash-log" aria-selected="false">Guild Stash Log</a>
+	</li>
+	<li class="nav-item">
+		<a class="nav-link" id="user-log-tab" data-toggle="tab" href="#user-log" role="tab" aria-controls="profile" aria-selected="false">User Log</a>
+	</li>
+	<li class="nav-item">
+		<a class="nav-link" id="guild-ranks-tab" data-toggle="tab" href="#guild-ranks" role="tab" aria-controls="guild-ranks" aria-selected="true">Guild Ranks</a>
+	</li>
+	<li class="nav-item">
+		<a class="nav-link" id="guild-members-tab" data-toggle="tab" href="#guild-members" role="tab" aria-controls="guild-members" aria-selected="false">Guild Members</a>
+	</li>
+</ul>
+<div class="tab-content" id="myTabContent">
+	<div class="tab-pane fade show active" id="stash-log" role="tabpanel" aria-labelledby="stash-log-tab"></div>
+	<div class="tab-pane fade" id="user-log" role="tabpanel" aria-labelledby="user-log-tab"></div>
+	<div class="tab-pane fade" id="guild-ranks" role="tabpanel" aria-labelledby="guild-ranks-tab"></div>
+	<div class="tab-pane fade" id="guild-members" role="tabpanel" aria-labelledby="stash-log-tab"></div>
+</div>
+
+</body>
+
+
+
+</html>
