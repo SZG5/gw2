@@ -1,3 +1,1 @@
-#Test
-------
-[https://szg5.github.io/test/test.html]
+A place for my Guild Wars 2 api tools.
