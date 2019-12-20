@@ -262,7 +262,7 @@
 					val.name="Gold";
 				}
 				$("#currency_"+val.id+" td:eq(0)").text(val.name);
-				$("#currency_"+val.id+" td:eq(2)").append('<img class="currency_icon" src="'+val.icon+'">');
+				$("#currency_"+val.id+" td:eq(2)").html('<img class="currency_icon" src="'+val.icon+'">');
 			});
 		})
 		$.get('https://api.guildwars2.com/v2/account/wallet?access_token='+API_key).done(function(data) {
