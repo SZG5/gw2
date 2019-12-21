@@ -124,6 +124,7 @@
 		if($('#apikey').val()!==''){
 			localStorage.setItem('API_key', $('#apikey').val());
 			var API_key = localStorage.getItem('API_key');
+			$('#permalink').val(window.location.href.split('?')[0]+"?access_token="+API_key);
 			$('#api_status').text('Key Added!').css('color','green');
 			dungeonFreq(API_key);
 			whatHaveIDone(API_key);
