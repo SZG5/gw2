@@ -80,8 +80,8 @@
 	<script>
 	$(function() {
 		// Allow a quick link for the user to save
-		if (window.location.search.split('?access_token=')[1]!=undefined) {
-			localStorage.setItem('API_key', window.location.search.split('?access_token=')[1].split('&')[0]);
+		if (window.location.search.split('access_token=')[1]!=undefined) {
+			localStorage.setItem('API_key', window.location.search.split('access_token=')[1].split('&')[0]);
 		}
 		if(localStorage.getItem('API_key')!==null){
 			var API_key = localStorage.getItem('API_key');
