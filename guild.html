@@ -52,6 +52,24 @@
 			.rare {color:#fcd00b;}
 			.exotic {color:#ffa405;}
 			.ascended {color:#fb3e8d;}
+			/* Guild Bank */
+			#guild-bank td {width:50px;height:50px;border:1px solid;}
+			.item div{height:50px;width:50px;text-align:center;display:table-cell;vertical-align:middle;background-size:50px;text-shadow: 2px 2px black;font-size: 24px;}
+			.item .info {
+				visibility: hidden;
+				width: 120px;
+				background-color: black;
+				color: #fff;
+				text-align: center;
+				padding: 5px 0;
+				border-radius: 6px;
+				position: absolute;
+				z-index: 1;
+				font-size:12px;
+			}
+			.item:hover .info {
+				visibility: visible;
+			}
 		</style>
 
 		<script>
@@ -130,7 +148,7 @@
 			}
 			function getGuildInfo(api_key, guild_id) {
 				/* Clear Old Info */
-				$('#stash-log, #user-log, #guild-ranks, #guild-members').empty();
+				$('#stash-log, #user-log, #guild-ranks, #guild-members, #guild-bank td').empty();
 				/* Guild Log */
 				$.get("https://api.guildwars2.com/v2/guild/"+guild_id+"/log?access_token="+api_key,function(data){
 					$.each(data, function( index, value ) {
@@ -151,10 +169,10 @@
 							$('#user-log').append("<div class=\"invited-users\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> was invited by <span class=\"user\">"+value.invited_by+"</span> <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
 						}
 						if (value.type==="joined"){
-							$('#user-log').append("<div class=\"joined\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> has joined the guild. <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+							$('#user-log').append("<div class=\"joined\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> has joined the guild. <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
 						}
 						if (value.type==="rank_change") {
-							$('#user-log').append("<div class=\"rank-changed\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> <span title=\"Former rank\">"+value.old_rank+"</span> to <span title=\"New rank\">"+value.new_rank+"</span> changed by <span class=\"user\">"+value.changed_by+"</span> <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+							$('#user-log').append("<div class=\"rank-changed\" data-sort="+index+"><span class=\"user\">"+value.user +"</span> <span title=\"Former rank\">"+value.old_rank+"</span> to <span title=\"New rank\">"+value.new_rank+"</span> changed by <span class=\"user\">"+value.changed_by+"</span> <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
 
 						}
 						
@@ -162,10 +180,10 @@
 						if (value.type==="stash") {
 							if (value.operation==="withdraw") {
 								if (value.coins>0) {
-									$('#stash-log').append("<div class=\"withdraw\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> withdrew "+goldConvert(value.coins)+" <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+									$('#stash-log').append("<div class=\"withdraw\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> withdrew "+goldConvert(value.coins)+" <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
 								} else {
 									$.get( "https://api.guildwars2.com/v2/items/"+value.item_id, function( data ) {
-										$('#stash-log').append("<div class=\"withdraw\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> withdrew <span class=\""+data.rarity.toLowerCase()+"\">["+data.name+"]</span> x "+value.count+" <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+										$('#stash-log').append("<div class=\"withdraw\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> withdrew <span class=\""+data.rarity.toLowerCase()+"\">["+data.name+"]</span> x "+value.count+" <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
 									});
 								}
 							} else if (value.operation==="deposit") {
@@ -173,7 +191,7 @@
 									$('#stash-log').append("<div class=\"deposit\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> deposited "+goldConvert(value.coins)+" <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
 								} else {
 									$.get( "https://api.guildwars2.com/v2/items/"+value.item_id, function( data ) {
-										$('#stash-log').append("<div class=\"deposit\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> deposited <span class=\""+data.rarity.toLowerCase()+"\">["+data.name+"]</span> x "+value.count+" <span class=\"timestamp\">"+new Date(value.time)+"</span><div>");
+										$('#stash-log').append("<div class=\"deposit\" data-sort="+index+"> <span class=\"user\">"+value.user+"</span> deposited <span class=\""+data.rarity.toLowerCase()+"\">["+data.name+"]</span> x "+value.count+" <span class=\"timestamp\">"+new Date(value.time)+"</span></div>");
 									});
 								}
 							} else {
@@ -216,6 +234,25 @@
 					$.each(data, function( index, value ) {
 						$('#guild-ranks').append(value.order+' <span class="rank-'+value.order+'">'+value.id+'<br>');
 						
+					});
+				});
+				/* Guild Bank */
+				$.get("https://api.guildwars2.com/v2/guild/"+guild_id+"/stash?access_token="+api_key,function(data){
+					$.each(data, function( index, value ) {
+						var tabID = value.upgrade_id;
+						//console.log(value.inventory);
+						$('#stash-'+tabID+'-note').text(value.note);
+						$('#stash-'+tabID+'-coins').text(goldConvert(value.coins));
+						// Get each item in the bank
+						$.each(value.inventory, function( index, value ) {
+							if (value!==null) { // Skip null values so it doesn't break
+								//console.log(value);
+								$.get( "https://api.guildwars2.com/v2/items/"+value.id, function( info ) {
+									$('#stash-'+tabID+' td:nth('+index+')').append("<div class=\"item\"><div>"+value.count+"</span><span class='info'>"+info.name+"</span></div>");
+									$('#stash-'+tabID+' td:nth('+index+') div').css('background-image', 'url(' + info.icon + ')');
+								});
+							}
+						});
 					});
 				});
 			}
@@ -269,7 +306,10 @@
 					<a class="nav-link active" id="stash-log-tab" data-toggle="tab" href="#stash-log" role="tab" aria-controls="stash-log" aria-selected="false">Guild Stash Log</a>
 				</li>
 				<li class="nav-item">
-					<a class="nav-link" id="user-log-tab" data-toggle="tab" href="#user-log" role="tab" aria-controls="profile" aria-selected="false">User Log</a>
+					<a class="nav-link" id="guild-bank-tab" data-toggle="tab" href="#guild-bank" role="tab" aria-controls="guild-bank-tab" aria-selected="false">Guild Bank</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id="user-log-tab" data-toggle="tab" href="#user-log" role="tab" aria-controls="user-log-tab" aria-selected="false">User Log</a>
 				</li>
 				<li class="nav-item">
 					<a class="nav-link" id="guild-ranks-tab" data-toggle="tab" href="#guild-ranks" role="tab" aria-controls="guild-ranks" aria-selected="true">Guild Ranks</a>
@@ -280,9 +320,23 @@
 			</ul>
 			<div class="tab-content" id="myTabContent">
 				<div class="tab-pane fade show active" id="stash-log" role="tabpanel" aria-labelledby="stash-log-tab"></div>
+				<div class="tab-pane fade" id="guild-bank" role="tabpanel" aria-labelledby="guild-bank-tab">
+					<h3>Guild Stash</h3>
+					<div id="stash-58-note"></div>
+					<table id="stash-58"><tbody><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table>
+					<div id="stash-58-coins"></div>
+					<h3>Treasure Trove</h3>
+					<div id="stash-55-note"></div>
+					<table id="stash-55"><tbody><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table>
+					<div id="stash-55-coins"></div>
+					<h3>Deep Cave</h3>
+					<div id="stash-78-note"></div>
+					<table id="stash-78"><tbody><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table>
+					<div id="stash-78-coins"></div>
+				</div>
 				<div class="tab-pane fade" id="user-log" role="tabpanel" aria-labelledby="user-log-tab"></div>
 				<div class="tab-pane fade" id="guild-ranks" role="tabpanel" aria-labelledby="guild-ranks-tab"></div>
-				<div class="tab-pane fade" id="guild-members" role="tabpanel" aria-labelledby="stash-log-tab"></div>
+				<div class="tab-pane fade" id="guild-members" role="tabpanel" aria-labelledby="guild-members-tab"></div>
 			</div>
 		</section>
 	</body>
