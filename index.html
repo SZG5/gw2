@@ -1,0 +1,484 @@
+<html>
+<head>
+	<title>GW2 Info Viewer</title>
+	<link rel="stylesheet" href="Assets/bootstrap.min.css">
+	<script src="Assets/jquery-3.4.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/clipboard.js/1.5.12/clipboard.min.js"></script>
+	<script src="Assets/bootstrap.bundle.min.js"></script>
+	<style>
+		body{
+			background:#000;
+			color:#d4d5d5
+		}
+		.container {
+			max-width:85%;
+		}
+		/* API KEY */
+		#apikey_container {
+			margin: 0 15px;
+			margin-bottom: 15px;
+		}
+		#apikey_container fieldset {
+			display: block;
+			margin-inline-start: 2px;
+			margin-inline-end: 2px;
+			padding-block-start: 0.35em;
+			padding-inline-start: 0.75em;
+			padding-inline-end: 0.75em;
+			padding-block-end: 0.625em;
+			min-inline-size: min-content;
+			border-width: 2px;
+			border-style: groove;
+			border-color: red;
+			border-image: initial;}
+		#apikey_container legend {
+			width: auto;
+		}
+		#dungeonTable td, #dungeonTable th {
+			padding:5px;
+		}
+		#dungeonTable tr {
+			border-bottom:1px solid;
+		}
+		#freqNum, .completedFreq {
+			color:red;
+		}
+		.dungeonedToday {
+			text-decoration:line-through;
+		}
+		.flex-container {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: space-evenly;
+		}
+		.flex-container > div {
+			max-width: 400px;
+		}
+		#completedStuff div {
+			text-transform: capitalize;
+		}
+		.currency_icon {
+			max-height: 25px;
+		}
+		/* Fractal Table */
+		.fl{display:inline-block;border-spacing: 0;border:1px solid #808080;cursor:default}
+		.fl:first-of-type{margin:0px}
+		.fl tr:nth-child(odd){background:#E5E5E5}
+		.t-1{background:#5f5f5f!important;color:#fff}
+		.t-2{background:#797979!important;color:#fff}
+		.fl tr:hover:not(.t-1):not(.t-2){background:#dc241f!important;color:#fff}
+
+		.frac {display:inline-block;vertical-align: top;border-spacing: 0;border:1px solid #808080;cursor:default}
+		.frac tr:nth-child(odd){border-top: 1px solid #787878;}
+		.frac tr.t-1 {text-align:center;}
+		.frac td{border-right: 1px solid #808080;}
+		.frac tr:hover:not(.t-1):not(.t-2){background:#dc241f!important;color:#fff}
+		.copy{font-size:small;cursor:pointer;border-left:1px solid; padding:0 5px}
+		.copy:hover {text-decoration:underline}
+	</style>
+	<script>
+	$(function() {
+		// Allow a quick link for the user to save
+		if (window.location.search.split('access_token=')[1]!=undefined) {
+			localStorage.setItem('API_key', window.location.search.split('access_token=')[1].split('&')[0]);
+		}
+		if(localStorage.getItem('API_key')!==null){
+			var API_key = localStorage.getItem('API_key');
+			$('#permalink').val(window.location.href.split('?')[0].split('&')[0]+"?access_token="+API_key);
+			$('#apikey').val(API_key);
+			dungeonFreq(API_key);
+			whatHaveIDone(API_key);
+			wallet(API_key);
+		}
+		if (localStorage.getItem('cookieWarning')) {
+			$('#deleteDataWarning').remove();
+		}
+		if (location.search.indexOf('noBanner=true')>=0) {
+			$('#deleteDataWarning').remove();
+			localStorage.setItem('cookieWarning', true);
+		}
+		getFracs();
+		getDailies();
+		getDailies(true);
+		// Copy
+		var clipboard = new Clipboard('.copy');
+
+		var setCopy = setInterval(function() {
+			if ($('#d-1,#d-2,#d-3' ).text().trim().length>0) {
+				$('#Frac_Daily').attr('data-clipboard-text',$('#d-1,#d-2,#d-3' ).text());
+				$('#Tom_Daily').attr('data-clipboard-text',$('#td-1,#td-2,#td-3' ).text());
+				$('#Frac_Recs').attr('data-clipboard-text',$('#r-1,#r-2,#r-3' ).text());
+				$('#Tom_Recs').attr('data-clipboard-text',$('#tr-1,#tr-2,#tr-3' ).text());
+			}
+			// Stops the loop if defined
+			if (($('#Tom_Recs').attr('data-clipboard-text')!=="Error")) {
+				clearInterval(setCopy);
+			}
+		}, 500);
+		// Set up the enter key for the text field
+		$('#apikey').keyup(function (e) {
+			if (e.keyCode === 13) {
+				setAPIkey();
+			}
+		});
+	});
+
+	function setAPIkey() {
+		if($('#apikey').val()!==''){
+			localStorage.setItem('API_key', $('#apikey').val());
+			var API_key = localStorage.getItem('API_key');
+			$('#permalink').val(window.location.href.split('?')[0]+"?access_token="+API_key);
+			$('#api_status').text('Key Added!').css('color','green');
+			dungeonFreq(API_key);
+			whatHaveIDone(API_key);
+			wallet(API_key);
+		} else {
+			$('#api_status').text('No Key Added.').css('color','red');
+		}
+	}
+
+	function removeAPIkey() {
+		localStorage.removeItem('API_key');
+		$('#api_status').text('Key Removed!').css('color','blue');
+	}
+
+
+	function getDailies(getTomorrow) {
+		var x='';
+		var y='today';
+		if (getTomorrow===true){
+			x='/tomorrow';
+			y='tomorrow';
+		}
+		$.get('https://api.guildwars2.com/v2/achievements/daily'+x).done(function(data) {
+			$.each(data.pve, function(index, val) {
+				//console.log(val.id,val.level.max)
+				$.get('https://api.guildwars2.com/v2/achievements/'+val.id).done(function(info) {
+					//console.log(info.name, val.level.max);
+					if(val.level.max!==80) {
+						$('#'+y+' #pve_dailies').append('<div style="opacity:70%">'+info.name+'</div>');
+					} else {
+						$('#'+y+' #pve_dailies').append('<div>'+info.name+'</div>');
+					}
+				});
+			});
+			$.each(data.pvp, function(index, val) {
+				$.get('https://api.guildwars2.com/v2/achievements/'+val.id).done(function(info) {
+					$('#'+y+' #pvp_dailies').append('<div>'+info.name+'</div>');
+				});
+			});
+			$.each(data.wvw, function(index, val) {
+				$.get('https://api.guildwars2.com/v2/achievements/'+val.id).done(function(info) {
+					$('#'+y+' #wvw_dailies').append('<div>'+info.name+'</div>');
+				});
+			});
+		});
+	}
+
+	function getFracs() {
+		//https://wiki.guildwars2.com/index.php?title=Widget:Daily_fractal_achievements&action=edit
+		var fracrec = {
+		1: "Volcanic", 2: "Uncategorized", 3: "Snowblind", 4: "Urban Battleground", 5: "Swampland", 6: "Cliffside", 7: "Aquatic Ruins", 8: "Underground Facility", 9: "Molten Furnace", 10: "Molten Boss", 11: "Deepstone", 12: "Siren's Reef", 13: "Chaos Isles", 14: "Aetherblade", 15: "Thaumanova Reactor", 16: "Twilight Oasis", 17: "Swampland", 18: "Captain Mai Trin Boss", 19: "Volcanic", 20: "Solid Ocean", 21: "Cliffside", 22: "Molten Furnace", 23: "Nightmare", 24: "Shattered Observatory", 25: "Sunqua Peak", 26: "Aquatic Ruins", 27: "Snowblind", 28: "Volcanic", 29: "Underground Facility", 30: "Chaos Isles", 31: "Urban Battleground", 32: "Swampland", 33: "Deepstone", 34: "Thaumanova Reactor", 35: "Solid Ocean", 36: "Uncategorized", 37: "Siren's Reef", 38: "Chaos Isles", 39: "Molten Furnace", 40: "Molten Boss", 41: "Twilight Oasis", 42: "Captain Mai Trin Boss", 43: "Thaumanova Reactor", 44: "Uncategorized", 45: "Solid Ocean", 46: "Aetherblade", 47: "Cliffside", 48: "Nightmare", 49: "Shattered Observatory", 50: "Sunqua Peak", 51: "Snowblind", 52: "Volcanic", 53: "Underground Facility", 54: "Siren's Reef", 55: "Thaumanova Reactor", 56: "Swampland", 57: "Urban Battleground", 58: "Molten Furnace", 59: "Twilight Oasis", 60: "Solid Ocean", 61: "Aquatic Ruins", 62: "Uncategorized", 63: "Chaos Isles", 64: "Thaumanova Reactor", 65: "Aetherblade", 66: "Urban Battleground", 67: "Deepstone", 68: "Snowblind", 69: "Cliffside", 70: "Molten Boss", 71: "Aetherblade", 72: "Captain Mai Trin Boss", 73: "Nightmare", 74: "Shattered Observatory", 75: "Sunqua Peak", 76: "Aquatic Ruins", 77: "Swampland", 78: "Siren's Reef", 79: "Uncategorized", 80: "Solid Ocean", 81: "Underground Facility", 82: "Thaumanova Reactor", 83: "Molten Furnace", 84: "Deepstone", 85: "Urban Battleground", 86: "Snowblind", 87: "Twilight Oasis", 88: "Chaos Isles", 89: "Swampland", 90: "Molten Boss", 91: "Uncategorized", 92: "Volcanic", 93: "Snowblind", 94: "Cliffside", 95: "Captain Mai Trin Boss", 96: "Aetherblade", 97: "Chaos", 98: "Nightmare", 99: "Shattered Observatory", 100: "Sunqua Peak"
+		};
+		// From https://gw2timer.com/data/general.js?v=20180330A
+		var fracid = {
+		// Fractal Scales
+			"2362": "1", "2477": "2", "2247": "3", "2405": "4", "2316": "5", "2229": "6", "2329": "7", "2422": "8", "2218": "9", "2560": "10", "2153": "11", "2597": "12", "2231": "13", "2327": "14", "2238": "15", "2308": "16", "2491": "17", "2467": "18", "2492": "19", "2189": "21", "2303": "22", "2366": "23", "2245": "24", "2473": "25", "2223": "26", "2239": "27", "2297": "28", "2166": "29", "2330": "30", "2533": "31", "2363": "32", "2244": "33", "2592": "34", "2266": "35", "2309": "36", "2377": "37", "2341": "38", "2591": "39", "2171": "40", "2598": "41", "2394": "42", "2337": "48", "3232": "51", "3237": "53", "3185": "54", "3192": "58", "3228": "59", "3172": "60", "3198": "61", "3215": "64", "3189": "65", "3184": "66", "3201": "67","3187":"68","3219": "69", "3203": "70", "3222": "72", "3230": "73", "3204": "74", "3238": "75",
+			
+			// Fractal Islands
+			"2889": "Underground", "2890": "Volcanic", "2892": "Swamp", "2895": "Thaumanova", "2896": "Urban", "2897": "Urban", "2898": "Aquatic", "2899": "Maitrin", "2900": "Aquatic", "2902": "Uncategorized", "2903": "Furnace", "2907": "Urban", "2908": "Volcanic", "2909": "Aetherblade", "2911": "Volcanic", "2916": "Snowblind", "2918": "Snowblind", "2923": "Ocean", "2925": "Uncategorized", "2926": "Cliffside", "2927": "Aetherblade", "2928": "Aetherblade", "2929": "Underground", "2930": "Cliffside", "2932": "Maitrin", "2934": "Molten Boss", "2935": "Swamp", "2939": "Uncategorized", "2940": "Uncategorized", "2941": "Urban", "2944": "Furnace", "2947": "Underground", "2948": "Aetherblade", "2949": "Snowblind", "2950": "Underground", "2952": "Snowblind", "2954": "Ocean", "2955": "Furnace", "2956": "Aquatic", "2958": "Cliffside", "2961": "Swamp", "2962": "Maitrin", "2964": "Aquatic", "2966": "Molten Boss", "2967": "Thaumanova", "2971": "Ocean", "2972": "Swamp", "2976": "Furnace", "2977": "Cliffside", "2978": "Maitrin", "2979": "Molten Boss", "2981": "Thaumanova", "2985": "Molten Boss", "2986": "Ocean", "2989": "Volcanic", "2991": "Thaumanova", "3038": "Chaos", "3044": "Chaos", "3045": "Chaos", "3063": "Chaos", "3175": "Nightmare", "3177": "Nightmare", "3196": "Nightmare", "3229": "Nightmare", "3509": "Observatory", "3478": "Observatory", "3464": "Observatory", "3458": "Observatory", "4028": "Oasis", "4006": "Oasis", "4030": "Oasis", "3973": "Oasis", "4244":"Deepstone", "4218":"Deepstone", "4210":"Deepstone", "4224":"Deepstone", "4551":"Siren's Reef", "4496":"Siren's Reef", "4526":"Siren's Reef", "4494":"Siren's Reef", "5447":"Sunqua Peak", "5449":"Sunqua Peak", "5437":"Sunqua Peak", "5446":"Sunqua Peak"
+		}
+		var dafracs = [];
+		var darecs = [];
+		var tom_fracs = [];
+		var tom_recs = [];
+		// Tomorrow's Daily
+		$.getJSON('https://api.guildwars2.com/v2/achievements/daily/tomorrow').done(function(category_data) {
+			var ids = [];
+			var newids = [];
+			// Get the API ids
+			$.each(category_data.fractals, function(key, val) {
+				ids.push(val.id);
+			});
+			/* console.log('ids); */
+			// Translate the API
+			for (var i = 0; i < ids.length; i++) {
+				newids.push(fracid[ids[i]]);
+			}
+			/* console.log(newids); */
+			// Remove repeats
+			tom_fracs = Array.from(new Set(newids));
+			// Place the numbers in front
+			tom_fracs = tom_fracs.sort();
+			// Convert, sort, and seperate them from tom_fracs to var tom_recs
+			tom_recs = tom_fracs.splice(',', 3).map(Number).sort(function(a, b) {
+				return a - b;
+			});;
+			// Add them to the table
+			for (var i = 1; i < tom_fracs.length + 1; i++) {
+				$('#td-' + i).append(tom_fracs[i - 1])
+			}
+			for (var i = 1; i < tom_recs.length + 1; i++) {
+				$('#tr-' + i).append(tom_recs[i - 1] + ' (' + fracrec[tom_recs[i - 1]] + ')')
+			}
+			/* console.log(tom_fracs) */
+		}).fail(function(d, textStatus, error) {
+			console.error("Achievement API getJSON failed (request #1), status: " + textStatus + ", error: " + error);
+		});
+		// Today's Daily
+		$.getJSON('https://api.guildwars2.com/v2/achievements/categories/88?wiki=1&lang=en').done(function(category_data) {
+			var ids = [];
+			var newids = [];
+			$.each(category_data.achievements, function(key, val) {
+				ids.push(val);
+			});
+			//console.log(ids);
+			// Translate the API
+			for (var i = 0; i < ids.length; i++) {
+				newids.push(fracid[ids[i]]);
+			}
+			//console.log(newids)
+			// Remove repeats
+			da_fracs = Array.from(new Set(newids));
+			// Place the numbers in front
+			da_fracs = da_fracs.sort();
+			// Convert, sort, and seperate them from da_fracs to var da_recs
+			da_recs = da_fracs.splice(',', 3).map(Number).sort(function(a, b) {
+				return a - b;
+			});;
+			// Add them to the table
+			for (var i = 1; i < da_fracs.length + 1; i++) {
+				$('#d-' + i).append(da_fracs[i - 1])
+			}
+			for (var i = 1; i < da_recs.length + 1; i++) {
+				$('#r-' + i).append(da_recs[i - 1] + ' (' + fracrec[da_recs[i - 1]] + ')')
+			}
+		}).fail(function(d, textStatus, error) {
+			console.error("Achievement API getJSON failed (request #1), status: " + textStatus + ", error: " + error);
+			$('#dailyfractaltable').html('<b>Achievements API unresponsive.</b>' + '<p>Error: ' + error + '</p>');
+		});
+	}
+
+	function wallet(API_key) {
+		$.get('https://api.guildwars2.com/v2/currencies?ids=all').done(function(data) {
+			$.each(data, function(index, val) {
+				if (val.id===1){
+					val.name="Gold";
+				}
+				$("#currency_"+val.id+" td:eq(0)").text(val.name);
+				$("#currency_"+val.id+" td:eq(2)").html('<img class="currency_icon" src="'+val.icon+'">');
+			});
+		})
+		$.get('https://api.guildwars2.com/v2/account/wallet?access_token='+API_key).done(function(data) {
+			$.each(data, function(index, val) {
+				if (val.id===1) {
+					$("#currency_"+val.id+" td:eq(1)").text(goldConvert(val.value));
+				} else {
+					$("#currency_"+val.id+" td:eq(1)").text(val.value.toLocaleString());
+				}
+			});
+			$('#api_status').text('Valid Key!').css('color','green');
+		}).fail(function() {
+			console.log("API Key Error!");
+			$('#api_status').text('Bad Key!').css('color','red');
+		});
+	}
+
+	function whatHaveIDone(API_key) {
+		$('#completedStuff').html('<h5>What Have I Done Today?</h5>');
+		$.get('https://api.guildwars2.com/v2/account/worldbosses?access_token='+API_key).done(function(data) {
+			if (data.length>0) {
+				$('#completedStuff').append('<h6>World Bosses</h6>');
+			}
+			$.each(data, function(index, val) {
+				$('#completedStuff').append('<div>'+val.replace(/_/g, ' ')+'</div>');
+			});
+			$('#api_status').text('Valid Key!').css('color','green');
+		}).fail(function() {
+			console.log("API Key Error!");
+			$('#api_status').text('Bad Key!').css('color','red');
+		});
+		$.get('https://api.guildwars2.com/v2/account/mapchests?access_token='+API_key).done(function(data) {
+			if (data.length>0) {
+				$('#completedStuff').append('<h6>Hero\'s Choice Chest</h6>');
+			}
+			$.each(data, function(index, val) {
+				$('#completedStuff').append('<div>'+val.replace(/_/g, ' ')+'</div>');
+			});
+			$('#api_status').text('Valid Key!').css('color','green');
+		}).fail(function() {
+			console.log("API Key Error!");
+			$('#api_status').text('Bad Key!').css('color','red');
+		});
+		$.get('https://api.guildwars2.com/v2/account/dailycrafting?access_token='+API_key).done(function(data) {
+			if (data.length>0) {
+				$('#completedStuff').append('<h6>Daily Crafting</h6>');
+			}
+			$.each(data, function(index, val) {
+				$('#completedStuff').append('<div>'+val.replace(/_/g, ' ')+'</div>');
+			});
+			$('#api_status').text('Valid Key!').css('color','green');
+		}).fail(function() {
+			console.log("API Key Error!");
+			$('#api_status').text('Bad Key!').css('color','red');
+		});
+	}
+
+	function dungeonFreq(API_key) {
+		// Clear old marks
+		$('[bit]').css('color','');
+		
+		$.get('https://api.guildwars2.com/v2/account/achievements?access_token='+API_key).done(function(data) {
+			$.each(data, function(index, val) {
+				if (this.id===2963){
+					//console.log(val.bits);
+					$('#dungeonFreq_Counter').text(val.current);
+					for (x in val.bits){
+						//console.log(val.bits[i])
+						$('[bit='+val.bits[x]+']').css('color','red');
+					}
+				}
+				
+			});
+			$('#api_status').text('Valid Key!').css('color','green');
+		}).fail(function() {
+			console.log("API Key Error!");
+			$('#api_status').text('Bad Key!').css('color','red');
+		});
+		// Pull from the daily dungeon completion 
+		$.get('https://api.guildwars2.com/v2/account/dungeons?access_token='+API_key).done(function(data) {
+			$.each(data, function(index, val) {
+				$('[dungeon-name='+val+']').css({'text-decoration':'line-through','opacity':'.65'});
+			});
+		}).fail(function() {
+			console.log("API Key Error!");
+			$('#api_status').text('Bad Key!').css('color','red');
+		})
+	}
+
+	function goldConvert(amount) {
+		var g = Math.floor(amount/10000);
+		var s	= Math.floor((amount%10000)/100);
+		
+		var c = amount%100;
+
+		return (((g>0) ? g.toLocaleString()+"g " : "")+((s>0) ? s+"s " : "")+((c>0) ? c+"c " : ""));
+	}
+	</script>
+</head>
+<body>
+	<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="true" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+		<div class="navbar-collapse collapse show" id="navbarNav" style="">
+			<ul class="navbar-nav">
+				<li class="nav-item">
+					<a class="nav-link" href="index.html">Main</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="guild.html">Guild Info Viewer</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="guild_missions.html">Guild Missions</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="dungeon_calc.html">Dungeon Calculator</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<section>
+		<div id="deleteDataWarning" class="alert alert-danger alert-dismissible fade show" style="margin: 10px 0 0px 0;" role="alert">We use cookies to store the your API key please make sure to delete data on exit if using a shared PC.<button type="button" class="close" data-dismiss="alert" aria-label="Close" onclick="localStorage.setItem('cookieWarning', true);"><span aria-hidden="true">×</span></button></div>
+		<div id="apikey_container">
+			<fieldset>
+			<legend title="More Info and Help!" style="cursor: pointer;" onclick="$('#api_help').toggle();">API Key	 </legend>
+				<div id="api_help" style="display:none;">
+				<dl>
+				  <dt>What is an API key?</dt>
+				  <dd>-- Its an application programming interface that allows 3rd parties to <b>view data</b> related to your Guild Wars 2 account.</dd>
+				  <dd>-- It can <b>NOT</b> change things on your account. ONLY VIEW them.</dd>
+				  <dt>How to get one?</dt>
+				  <dd>-- Go to <a href="https://account.arena.net/login?redirect_uri=%2Fapplications">https://account.arena.net/login?redirect_uri=%2Fapplications</a></dd>
+				  <dd>-- Check <code>account</code>, <code>wallet</code>, and <code>progression</code></dd>
+				  <dt>Why do we need access to the wallet?</dt>
+				  <dd>--  Dungeon Tokens are stored in the wallet.</dd>
+				  <dt>Why do we need access to progression?</dt>
+				  <dd>--  Can't see dungeon related achievements without it.</dd>
+				</dl>
+				</div>
+				API Key: <span id="api_status">No Key Added.</span><input id="apikey" type="text" style="width:100%"><div style="margin-top:10px">
+				<input type="button" value="Apply Key" onclick="setAPIkey();"> <input type="button" value="Remove Key" onclick="removeAPIkey();"> <input type="button" value="Info" onclick="$('#api_help').toggle();"><br><br><b>Permalink:</b><input id="permalink" disabled style="width:100%"></div>
+			</fieldset>
+		</div>
+		<div class="flex-container">
+			<div id="fractals"><h5>Fractals</h5>
+				<table class="frac"><tr class="t-1"><td colspan="4">Today's Fractals</td></tr><tr><td class="t-2">Daily <span title="Copy Today's Daily to Clipboard" class="copy" id="Frac_Daily" data-clipboard-text="Error">Copy</span></td><td id="d-1">&nbsp;</td><td id="d-2">&nbsp;</td><td id="d-3">&nbsp;</td></tr><tr><td class="t-2">Recs <span title="Copy Today's Recs to Clipboard" class="copy" id="Frac_Recs" data-clipboard-text="Error">Copy</span></td><td id="r-1">&nbsp;</td><td id="r-2">&nbsp;</td><td id="r-3">&nbsp;</td></tr></table><table class="frac"><tr class="t-1"><td colspan="4">Tomorrow's Fractals</td></tr><tr><td class="t-2">Daily <span title="Copy Tomorrow's Daily to Clipboard" class="copy" id="Tom_Daily" data-clipboard-text="Error">Copy</span></td><td id="td-1">&nbsp;</td><td id="td-2">&nbsp;</td><td id="td-3">&nbsp;</td></tr><tr><td class="t-2">Recs <span title="Copy Tomorrow's Recs to Clipboard" class="copy" id="Tom_Recs" data-clipboard-text="Error">Copy</span></td><td id="tr-1">&nbsp;</td><td id="tr-2">&nbsp;</td><td id="tr-3">&nbsp;</td></tr></table>
+			</div>
+			<div id="dailies"><h5>Dailies (<span style="text-decoration:underline;cursor:pointer" onclick="$('#tomorrow,#today').toggle();($(this).text()=='Show Tomorrow')?$(this).text('Hide Tomorrow'):$(this).text('Show Tomorrow');">Show Tomorrow</span>)</h5>
+				<div id="today">
+					<h6>PvE</h6>
+					<div id="pve_dailies"></div>
+					<h6>PvP</h6>
+					<div id="pvp_dailies"></div>
+					<h6>WvW</h6>
+					<div id="wvw_dailies"></div>
+				</div>
+				<div id="tomorrow" style="display:none">
+					<h6>PvE</h6>
+					<div id="pve_dailies"></div>
+					<h6>PvP</h6>
+					<div id="pvp_dailies"></div>
+					<h6>WvW</h6>
+					<div id="wvw_dailies"></div>
+				</div>
+			</div>
+			
+			<div id="dungeons">
+				<h5>Dungeon Frequenter (<span id="dungeonFreq_Counter">X</span> / 8)</h5>
+				<!-- Damn ANet and their weird ass achievement data -->
+					<table id="dungeonTable">
+						<tr><td bit="4" dungeon-name="ac_story" title="Ascalonian Catacombs Story">AC Story</td><td bit="5" dungeon-name="hodgins" title="Catacombs Explorable—Hodgins's Path">AC 1</td><td bit="6" dungeon-name="detha" title="Catacombs Explorable—Detha's Path">AC 2</td><td bit="7" dungeon-name="tzark" title="Catacombs Explorable—Tzark's Path">AC 3</td></tr>
+						<tr><td bit="12" dungeon-name="cm_story" title="Caudecus's Manor Story">CM Story</td><td bit="13" dungeon-name="asura" title="Manor Explorable—Asura Path">CM 1</td><td bit="14" dungeon-name="seraph" title="Manor Explorable—Seraph Path">CM 2</td><td bit="15" dungeon-name="butler" title="Manor Explorable—Butler's Path">CM 3</td></tr>
+						<tr><td bit="20" dungeon-name="ta_story" title="Twilight Arbor Story">TA Story</td><td bit="21" dungeon-name="leurent" title="Twilight Explorable—Leurent's Path">TA Up</td><td bit="23" dungeon-name="aetherpath" title="Twilight Explorable—Aetherpath">Aether</td><td bit="22" dungeon-name="vevina" title="Twilight Explorable—Vevina's Path">TA Forward</td></tr>
+						<tr><td bit="16" dungeon-name="se_story" title="Sorrow's Embrace Story">SE Story</td><td bit="17" dungeon-name="fergg" title="Sorrow's Explorable—Fergg's Path">SE 1</td><td bit="18" dungeon-name="rasalov" title="Sorrow's Explorable—Rasolov's Path">SE 2</td><td bit="19" dungeon-name="koptev" title="Sorrow's Explorable—Koptev's Path">SE 3</td></tr>
+						<tr><td bit="28" dungeon-name="cof_story" title="Citadel of Flame Story">CoF Story</td><td bit="29" dungeon-name="ferrah" title="Citadel Explorable—Ferrah's Path">CoF 1</td><td bit="30" dungeon-name="magg" title="Citadel Explorable—Magg's Path">CoF 2</td><td bit="31" dungeon-name="rhiannon" title="Citadel Explorable—Rhiannon's Path">CoF 3</td></tr>
+						<tr><td bit="24" dungeon-name="hotw_story" title="Honor of the Waves Story">HotW Story</td><td bit="25" dungeon-name="butcher" title="Honor Explorable—Butcher's Path">HotW 1</td><td bit="26" dungeon-name="plunderer" title="Honor Explorable—Plunderer's Path">HotW 2</td><td bit="27" dungeon-name="zealot" title="Honor Explorable—Zealot's Path">HotW 3</td></tr>
+						<tr><td bit="0" dungeon-name="coe_story" title="Crucible of Eternity Story">CoE Story</td><td bit="1" dungeon-name="submarine" title="Crucible Explorable—Submarine Path">CoE 1</td><td bit="2" dungeon-name="teleporter" title="Crucible Explorable—Teleporter Path">CoE 2</td><td bit="3" dungeon-name="front_door" title="Crucible Explorable—Front Door Path">CoE 3</td></tr>
+						<tr><td bit="8" dungeon-name="jotun" title="Arah Explorable—Jotun Path">Arah 1</td><td bit="9" dungeon-name="mursaat" title="Arah Explorable—Mursaat Path">Arah 2</td><td bit="10" dungeon-name="forgotten" title="Arah Explorable—Forgotten Path">Arah 3</td><td bit="11" dungeon-name="seer" title="Arah Explorable—Seer Path">Arah 4</td></tr>
+					</table>
+			</div>
+			<div id="wallet"><h5>Wallet</h5>
+				<table id="user_currency">
+					<thead><tr><th>Currency</th><th colspan="2">Amount</th></tr></thead>
+					<tbody>
+						<tr id="currency_1"><td></td><td></td><td></td></tr>
+						<tr id="currency_2"><td></td><td></td><td></td></tr>
+						<tr id="currency_3"><td></td><td></td><td></td></tr>
+						<tr id="currency_4"><td></td><td></td><td></td></tr>
+						<tr id="currency_7"><td></td><td></td><td></td></tr>
+						<tr id="currency_24"><td></td><td></td><td></td></tr>
+						<!-- Dungeon Tokens -->
+						<tr id="currency_5"><td></td><td></td><td></td></tr>
+						<tr id="currency_9"><td></td><td></td><td></td></tr>
+						<tr id="currency_11"><td></td><td></td><td></td></tr>
+						<tr id="currency_10"><td></td><td></td><td></td></tr>
+						<tr id="currency_13"><td></td><td></td><td></td></tr>
+						<tr id="currency_12"><td></td><td></td><td></td></tr>
+						<tr id="currency_14"><td></td><td></td><td></td></tr>
+						<tr id="currency_6"><td></td><td></td><td></td></tr>
+						<!-- Magic -->
+						<tr id="currency_32"><td></td><td></td><td></td></tr>
+						<tr id="currency_45"><td></td><td></td><td></td></tr>
+						<!-- WVW -->
+						<tr id="currency_15"><td></td><td></td><td></td></tr>
+						<tr id="currency_26"><td></td><td></td><td></td></tr>
+						<tr id="currency_31"><td></td><td></td><td></td></tr>
+						<tr id="currency_36"><td></td><td></td><td></td></tr>
+					</tbody>
+				</table>
+			</div>
+			<div id="completedStuff"><h5>What Have I Done Today?</h5></div>
+		</div>
+	</section>
+</body>
+</html>

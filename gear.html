@@ -1,0 +1,503 @@
+<html>
+<head>
+	<title>GW2 Gearing</title>
+	<link rel="stylesheet" href="Assets/bootstrap.min.css">
+	<script src="Assets/jquery-3.4.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/clipboard.js/1.5.12/clipboard.min.js"></script>
+	<script src="Assets/bootstrap.bundle.min.js"></script>
+	
+	
+	
+	
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+	
+	<style>
+		body{
+			background:#000;
+			color:#d4d5d5
+		}
+		.container {
+			max-width:85%;
+		}
+		/* API KEY */
+		#apikey_container {
+			margin: 0 15px;
+			margin-bottom: 15px;
+		}
+		#apikey_container fieldset {
+			display: block;
+			margin-inline-start: 2px;
+			margin-inline-end: 2px;
+			padding-block-start: 0.35em;
+			padding-inline-start: 0.75em;
+			padding-inline-end: 0.75em;
+			padding-block-end: 0.625em;
+			min-inline-size: min-content;
+			border-width: 2px;
+			border-style: groove;
+			border-color: red;
+			border-image: initial;}
+		#apikey_container legend {
+			width: auto;
+		}
+		.mat_name img, .matIcon {height:25px}
+	</style>
+	<script>
+	$(function() {
+		// Allow a quick link for the user to save
+		if (window.location.search.split('access_token=')[1]!=undefined) {
+			localStorage.setItem('API_key', window.location.search.split('access_token=')[1].split('&')[0]);
+		}
+		if(localStorage.getItem('API_key')!==null){
+			var API_key = localStorage.getItem('API_key');
+			$('#permalink').val(window.location.href.split('?')[0].split('&')[0]+"?access_token="+API_key);
+			$('#apikey').val(API_key);
+			checkMats();
+		}
+		if (localStorage.getItem('cookieWarning')) {
+			$('#deleteDataWarning').remove();
+		}
+		if (location.search.indexOf('noBanner=true')>=0) {
+			$('#deleteDataWarning').remove();
+			localStorage.setItem('cookieWarning', true);
+		}
+		// BACK UP 
+		$('#chars').val(localStorage.getItem('chars'));
+		$('#chars').on( "keyup", function() {
+			localStorage.setItem('chars',$('#chars').val());
+		});
+	});
+
+	function setAPIkey() {
+		if($('#apikey').val()!==''){
+			localStorage.setItem('API_key', $('#apikey').val());
+			var API_key = localStorage.getItem('API_key');
+			$('#permalink').val(window.location.href.split('?')[0]+"?access_token="+API_key);
+			$('#api_status').text('Key Added!').css('color','green');
+		} else {
+			$('#api_status').text('No Key Added.').css('color','red');
+		}
+		checkMats();
+	}
+
+	function removeAPIkey() {
+		localStorage.removeItem('API_key');
+		$('#api_status').text('Key Removed!').css('color','blue');
+	}
+	
+	
+	
+	
+	
+function searchCharacter(characterName, itemID, API_KEY) {
+	$.get('https://api.guildwars2.com/v2/characters/'+characterName+'?access_token='+API_KEY).done(function(data) {
+		var numFound=0;
+		//console.log(data.bags);
+		for(i in data.bags) {
+			if(data.bags[i]!=null){
+			//console.log(data.bags[i].inventory);
+				for(slot in data.bags[i].inventory){
+					if(data.bags[i].inventory[slot]!==null){
+						if(data.bags[i].inventory[slot].id==itemID){
+							numFound += data.bags[i].inventory[slot].count;
+						}	
+					}
+				}
+			}
+		}
+		//console.log(characterName+': '+numFound);
+		$('#mat_'+itemID+' .char_store').text((Number($('#mat_'+itemID+' .char_store').text().replace(/,/g,''))+numFound).toLocaleString());
+	});
+}
+// DEFUNT bc cross origin isnt working so use the other thing.
+function searchAllCharacters(itemID, API_KEY){
+	$.get('https://api.guildwars2.com/v2/characters/?access_token='+API_KEY).done(function(data) {
+		console.log(data);
+		for(i in data) {
+			console.log(data[i]);
+			searchCharacter(data[i],itemID,API_KEY);
+		}
+	});
+}
+
+function searchBank(itemID, API_KEY){
+	var count=0
+	$.get('https://api.guildwars2.com/v2/account/bank?access_token='+API_KEY).done(function(data) {
+        for(i in data) {
+			if(data[i]!=null&&data[i].id==itemID){
+               count += (data[i].count);
+            }
+		}
+        //console.log('Bank Search found: id,'+itemID+' count: '+count);
+		$('#mat_'+itemID+' .bank_store').text(count.toLocaleString());
+	});
+}
+
+function searchMatStorage(itemID, API_KEY) {
+	var count=0;
+	$.get('https://api.guildwars2.com/v2/account/materials?access_token='+API_KEY).done(function(data) {
+		//console.log(data);
+        for(i in data) {
+			if(data[i]!=null&&data[i].id==itemID){
+               count = count+ (data[i].count);
+            }
+		}
+        //console.log('Mat Store Search found: id,'+itemID+' count: '+count);
+		$('#mat_'+itemID+' .mat_storeage').text(count.toLocaleString());
+	});
+}
+
+function searchAccount(itemID, API_KEY) {
+	//searchAllCharacters(itemID, API_KEY)
+	searchBank(itemID, API_KEY);
+	searchMatStorage(itemID, API_KEY);
+}
+// DEFUNT
+function getIdName(itemID) {
+	$.get('https://api.guildwars2.com/v2/items/12344').done(function(data) {
+		return data.name;
+	});
+}
+
+///////
+
+
+var matsToFind = [79280,79469,79899,80332,81127,81706,86069,86977,87645,88955,89537,90783,92072,92272, 75919];
+
+	$.get('https://api.guildwars2.com/v2/items?ids='+matsToFind.join()).done(function(data) {
+		console.log(data);
+		for(i in data) {
+			//console.log(data[i].name, data[i].icon, data[i].id);
+            $('#mat_table tbody').append('<tr id="mat_'+data[i].id+'"><td class="mat_name"><img src="'+data[i].icon+'"> '+data[i].name+'</td><td class="mat_storeage"></td><td class="bank_store"></td><td class="char_store"></td></tr>')
+		}
+	});
+	
+
+function checkMats() {
+	for (x in matsToFind) {
+		searchAccount(matsToFind[x], localStorage.getItem('API_key'));
+	}
+	// WORK AROUND TO get all the characters on the account. BC Cross Origin doesnt work.
+	fetch('https://api.guildwars2.com/v2/characters?access_token='+localStorage.getItem('API_key')).then(function(response) {
+		// When the page is loaded convert it to text
+			return response.text();
+		}).then(function(html) {
+		// Initialize the DOM parser & Parse the text
+			var parser = new DOMParser();
+			var doc = parser.parseFromString(html, "text/html");
+			var characterName = JSON.parse(doc.body.innerText);
+			for (x in matsToFind) {
+				for (i in characterName) {
+					searchCharacter(characterName[i], matsToFind[x], localStorage.getItem('API_key'));
+				}
+			}
+		})
+		.catch(function(err) {	
+			console.log(title+' Failed to fetch page: ', err);	
+		});
+}
+/// NOT USED
+function workAround() {
+	var characterName = $('#chars').val().split('\n');
+	$('.char_store').text('');
+	for (x in matsToFind) {
+		for (i in characterName) {
+			searchCharacter(characterName[i], matsToFind[x], localStorage.getItem('API_key'));
+		}
+	}
+}
+	</script>
+	
+	
+<!-- W3 Schools -->
+<script>
+function sortTable(n) {
+  var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+  table = document.getElementById("myTable");
+  switching = true;
+  dir = "asc"; 
+  while (switching) {
+    switching = false;
+    rows = table.rows;
+    for (i = 1; i < (rows.length - 1); i++) {
+      shouldSwitch = false;
+      x = rows[i].getElementsByTagName("TD")[n];
+      y = rows[i + 1].getElementsByTagName("TD")[n];
+      if (dir == "asc") {
+        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+          shouldSwitch= true;
+          break;
+        }
+      } else if (dir == "desc") {
+        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+          shouldSwitch = true;
+          break;
+        }
+      }
+    }
+    if (shouldSwitch) {
+      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+      switching = true;
+      switchcount ++;      
+    } else {
+      if (switchcount == 0 && dir == "asc") {
+        dir = "desc";
+        switching = true;
+      }
+    }
+  }
+}
+</script>	
+
+</head>
+<body>
+	<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="true" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+		<div class="navbar-collapse collapse show" id="navbarNav" style="">
+			<ul class="navbar-nav">
+				<li class="nav-item">
+					<a class="nav-link" href="index.html">Main</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="guild.html">Guild Info Viewer</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="guild_missions.html">Guild Missions</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<section>
+		<div id="deleteDataWarning" class="alert alert-danger alert-dismissible fade show" style="margin: 10px 0 0px 0;" role="alert">We use cookies to store the your API key please make sure to delete data on exit if using a shared PC.<button type="button" class="close" data-dismiss="alert" aria-label="Close" onclick="localStorage.setItem('cookieWarning', true);"><span aria-hidden="true">×</span></button></div>
+		<div id="apikey_container">
+			<fieldset>
+			<legend title="More Info and Help!" style="cursor: pointer;" onclick="$('#api_help').toggle();">API Key	 </legend>
+				<div id="api_help" style="display:none;">
+				<dl>
+				  <dt>What is an API key?</dt>
+				  <dd>-- Its an application programming interface that allows 3rd parties to <b>view data</b> related to your Guild Wars 2 account.</dd>
+				  <dd>-- It can <b>NOT</b> change things on your account. ONLY VIEW them.</dd>
+				  <dt>How to get one?</dt>
+				  <dd>-- Go to <a href="https://account.arena.net/login?redirect_uri=%2Fapplications">https://account.arena.net/login?redirect_uri=%2Fapplications</a></dd>
+				  <dd>-- Check <code>account</code>, <code>wallet</code>, and <code>progression</code></dd>
+				  <dt>Why do we need access to the wallet?</dt>
+				  <dd>--  Dungeon Tokens are stored in the wallet.</dd>
+				  <dt>Why do we need access to progression?</dt>
+				  <dd>--  Can't see dungeon related achievements without it.</dd>
+				</dl>
+				</div>
+				API Key: <span id="api_status">No Key Added.</span><input id="apikey" type="text" style="width:100%"><div style="margin-top:10px">
+				<input type="button" value="Apply Key" onclick="setAPIkey();"> <input type="button" value="Remove Key" onclick="removeAPIkey();"> <input type="button" value="Info" onclick="$('#api_help').toggle();"><br><br><b>Permalink:</b><input id="permalink" disabled style="width:100%"></div>
+			</fieldset>
+		</div>
+		<table id="mat_table">
+		<thead>
+		  <tr>
+			<th>Currency</th>
+			<th>Mat Storage</th>
+			<th>Bank</th>
+			<th>Character</th>
+		  </tr>
+		</thead>
+		<tbody>
+		</tbody>
+		</table>
+		<!-- <textarea id="chars"></textarea><button onclick="workAround()">Pull from Characters</button> -->
+<table id="myTable">
+	<tr>
+		<!--When a header is clicked, run the sortTable function, with a parameter, 0 for sorting by names, 1 for sorting by country:-->
+		<th onclick="sortTable(0)">Name</th>
+		<th onclick="sortTable(1)">Type</th>
+		<th onclick="sortTable(2)">Vendor</th>
+		<th onclick="sortTable(3)">Map</th>
+		<th onclick="sortTable(4)">Cost</th>
+		</tr>
+	<tr>
+		<td>Blood Ruby Pendant</td>
+		<td>Amulet</td>
+		<td>Scholar Rakka</td>
+		<td>Bloodstone Fen</td>
+		<td>125 <img class="matIcon" src="https://render.guildwars2.com/file/0DA92F9059C30EF00DBC6CB0D233F235E17F12DD/1465570.png"> Blood Rubies + 3,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Blood Ruby Band</td>
+		<td>Ring</td>
+		<td>Scholar Rakka</td>
+		<td>Bloodstone Fen</td>
+		<td>100 <img class="matIcon" src="https://render.guildwars2.com/file/0DA92F9059C30EF00DBC6CB0D233F235E17F12DD/1465570.png"> Blood Rubies + 2,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Blood Ruby Backpack</td>
+		<td>Back</td>
+		<td>Scholar Rakka</td>
+		<td>Bloodstone Fen</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/0DA92F9059C30EF00DBC6CB0D233F235E17F12DD/1465570.png"> Blood Rubies + 5,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Sparking Petrified Wood</td>
+		<td>Accessory</td>
+		<td>Scholar Surra</td>
+		<td>Ember Bay</td>
+		<td>150 <img class="matIcon" src="https://render.guildwars2.com/file/EC4BA02B3BFEE603551B53BBF5305679AE700776/1493259.png"> Petrified Wood + 4,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Lava Skull Backpack</td>
+		<td>Back</td>
+		<td>Scholar Surra</td>
+		<td>Ember Bay</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/EC4BA02B3BFEE603551B53BBF5305679AE700776/1493259.png"> Petrified Wood + 5,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Black Ice Band</td>
+		<td>Ring</td>
+		<td>Slooshoo</td>
+		<td>Bitterfrost Frontier</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/414B0D0E3E38F73EC360C5BAE8A1DE98D324DCE6/1601463.png"> Fresh Winterberries + 2,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Icebrood Horn Backpack</td>
+		<td>Back</td>
+		<td>Slooshoo</td>
+		<td>Bitterfrost Frontier</td>
+		<td>400 <img class="matIcon" src="https://render.guildwars2.com/file/414B0D0E3E38F73EC360C5BAE8A1DE98D324DCE6/1601463.png"> Fresh Winterberries + 5,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Black Ice Earring</td>
+		<td>Accessory</td>
+		<td>Slooshoo</td>
+		<td>Bitterfrost Frontier</td>
+		<td>300 <img class="matIcon" src="https://render.guildwars2.com/file/414B0D0E3E38F73EC360C5BAE8A1DE98D324DCE6/1601463.png"> Fresh Winterberries + 4,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>White Mantle Scroll</td>
+		<td>Back</td>
+		<td>Quartermaster Hitchens</td>
+		<td>Lake Doric</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/B3D1DB6458480968B2FC0C0115476EC892CD0555/1633883.png"> Jade Shards + 5,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Jade Pendant</td>
+		<td>Amulet</td>
+		<td>Quartermaster Hitchens</td>
+		<td>Lake Doric</td>
+		<td>125 <img class="matIcon" src="https://render.guildwars2.com/file/B3D1DB6458480968B2FC0C0115476EC892CD0555/1633883.png"> Jade Shards + 3,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Fire Orchid Garland</td>
+		<td>Amulet</td>
+		<td>Supplymaster Hanjo</td>
+		<td>Draconis Mons</td>
+		<td>125 <img class="matIcon" src="https://render.guildwars2.com/file/D667F038D601D31EC35F08E96EB1C832026E3A21/1677062.png"> Fire Orchid Blossoms + 3,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Gilded Orchid Band</td>
+		<td>Ring</td>
+		<td>Supplymaster Hanjo</td>
+		<td>Draconis Mons</td>
+		<td>100 <img class="matIcon" src="https://render.guildwars2.com/file/D667F038D601D31EC35F08E96EB1C832026E3A21/1677062.png"> Fire Orchid Blossoms + 2,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Coral Choker</td>
+		<td>Amulet</td>
+		<td>Provisioner Anlana</td>
+		<td>Siren's Landing</td>
+		<td>125 <img class="matIcon" src="https://render.guildwars2.com/file/F3B0E4096379AA58AFC6CE1ED1FBC5B015C40840/1729789.png"> Orrian Pearls + 3,000 Unbound Magic</td>
+	</tr>
+	<tr>
+		<td>Relic of Balthazar</td>
+		<td>Back</td>
+		<td>Queen Yasamin</td>
+		<td>Siren's Landing</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/F3B0E4096379AA58AFC6CE1ED1FBC5B015C40840/1729789.png"> Orrian Pearls + 315,000 Karma</td>
+	</tr>
+	<tr>
+		<td>Relic of Dwayna</td>
+		<td>Back</td>
+		<td>King Zoran</td>
+		<td>Siren's Landing</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/F3B0E4096379AA58AFC6CE1ED1FBC5B015C40840/1729789.png"> Orrian Pearls + 315,000 Karma</td>
+	</tr>
+	<tr>
+		<td>Relic of Grenth</td>
+		<td>Back</td>
+		<td>Queen Mahtab</td>
+		<td>Siren's Landing</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/F3B0E4096379AA58AFC6CE1ED1FBC5B015C40840/1729789.png"> Orrian Pearls + 315,000 Karma</td>
+	</tr>
+	<tr>
+		<td>Relic of Lyssa</td>
+		<td>Back</td>
+		<td>Queen Bahar</td>
+		<td>Siren's Landing</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/F3B0E4096379AA58AFC6CE1ED1FBC5B015C40840/1729789.png"> Orrian Pearls + 315,000 Karma</td>
+	</tr>
+	<tr>
+		<td>Relic of Melandru</td>
+		<td>Back</td>
+		<td>King Reza</td>
+		<td>Siren's Landing</td>
+		<td>200 <img class="matIcon" src="https://render.guildwars2.com/file/F3B0E4096379AA58AFC6CE1ED1FBC5B015C40840/1729789.png"> Orrian Pearls + 315,000 Karma</td>
+	</tr>
+	<tr>
+		<td>Difluorite Band</td>
+		<td>Ring</td>
+		<td>Ethall</td>
+		<td>Sandswept Isles</td>
+		<td>100 <img class="matIcon" src="https://render.guildwars2.com/file/3148F3239A104D6C7CE4F65DB41BAAB16039C81E/1947318.png"> Difluorite Crystals + 2,000 Volatile Magic</td>
+	</tr>
+	<tr>
+		<td>Multifaceted Difluorite Earrings</td>
+		<td>Accessory</td>
+		<td>Ethall</td>
+		<td>Sandswept Isles</td>
+		<td>150 <img class="matIcon" src="https://render.guildwars2.com/file/3148F3239A104D6C7CE4F65DB41BAAB16039C81E/1947318.png"> Difluorite Crystals + 4,000 Volatile Magic</td>
+	</tr>
+	<tr>
+		<td>Mistborn Band</td>
+		<td>Ring</td>
+		<td>Crystal Bloom Quartermaster</td>
+		<td>Dragonfall</td>
+		<td>100 <img class="matIcon" src="https://render.guildwars2.com/file/E76806D6DF4E27C70EA70A9FAC1F0D036C18659E/2140686.png"> Mistborn Mote + 2,000 Volatile Magic</td>
+	</tr>
+	<tr>
+		<td>Scion-Spike Amulet</td>
+		<td>Amulet</td>
+		<td>Mist Warden Quartermaster</td>
+		<td>Dragonfall</td>
+		<td>125 <img class="matIcon" src="https://render.guildwars2.com/file/E76806D6DF4E27C70EA70A9FAC1F0D036C18659E/2140686.png"> Mistborn Mote + 3,000 Volatile Magic</td>
+	</tr>
+	<tr>
+		<td>Mists-Charged Treasure</td>
+		<td>Accessory</td>
+		<td>Olmakhan Quartermaster</td>
+		<td>Dragonfall</td>
+		<td>150 <img class="matIcon" src="https://render.guildwars2.com/file/E76806D6DF4E27C70EA70A9FAC1F0D036C18659E/2140686.png"> Mistborn Mote + 4,000 Volatile Magic</td>
+	</tr>
+	<tr>
+		<td>Asgeir's Amulet</td>
+		<td>Amulet</td>
+		<td>Bright Shore</td>
+		<td>Bjora Marches</td>
+		<td>375 <img class="matIcon" src="https://render.guildwars2.com/file/D40CAAE1BEE9C8B3606534F501A244E5E3149852/2220776.png"> Eternal Ice Shard + 56,000 Karma</td>
+	</tr>
+	<tr>
+		<td>Asgeir's Talisman</td>
+		<td>Accessory</td>
+		<td>Humble Stone</td>
+		<td>Bjora Marches</td>
+		<td>375 <img class="matIcon" src="https://render.guildwars2.com/file/D40CAAE1BEE9C8B3606534F501A244E5E3149852/2220776.png"> Eternal Ice Shard + 56,000 Karma</td>
+	</tr>
+	<tr>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+		<td></td>
+	</tr>
+</table>
+	</section>
+</body>
+</html>

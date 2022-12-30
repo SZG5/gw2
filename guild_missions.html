@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>GW2 Guild Mission Info</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/clipboard.js/1.5.12/clipboard.min.js"></script>
+	<style>
+.navbar{overflow:hidden;background-color:#333;font-family:Arial}.navbar a{float:left;font-size:16px;color:white;text-align:center;padding:14px 16px;text-decoration:none}.navbar a:hover{background-color:#dc241f}
+body{margin:0;font-family: Arial,"Helvetica Neue",Helvetica,sans-serif;}
+section{margin:0px 75px;border:1px solid #999;padding:0 25px;border-top-color:#fff;border-bottom-color:#fff;}
+section a {color:#1a0dab;text-decoration:none}
+section a:hover {text-decoration:underline}
+#msg {
+	padding: .75rem 1.25rem;
+    margin: 1rem 0;
+    border: 1px solid transparent;
+    border-radius: .25rem;
+    background-color: #d9edf7;
+    border-color: #bcdff1;
+    color: #31708f;
+	position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    margin-left: -150px;
+    margin-top: -25px;
+	z-index:1;
+	display:none;
+}
+/* Guild Bounty */
+#guild_bounty{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(252px, 0fr));
+	margin: inherit;
+	padding-top: 20px;
+}
+.bounty {
+	background: url(Assets/img/bountyimgs.png) no-repeat;
+	width: 252px;
+	height: 128px;
+	display: table-cell;
+	vertical-align: bottom;
+	text-align: right;
+	color: white;
+	font-size: 24px;
+	user-select: none;
+	cursor:default;
+	text-shadow: 2px 2px #000;
+}
+.bounty:hover {
+	opacity: 0.7;
+	filter: alpha(opacity=70);
+}
+.2-MULT{background-position:0 0;}.Ander_Wildman_Westward{background-position:-256px 0}.Big_Mayana{background-position:-512px 0}.Bookworm_Bwikki{background-position:-768px 0}.Brekkabek{background-position:-1020px 0}.Crusader_Michiele{background-position:-1272px 0}.Deputy_Brooke{background-position:-1524px 0}.Devious_Teesa{background-position:-1776px 0}.Diplomat_Tarban{background-position:-2028px 0}.Half-Baked_Komali{background-position:-2280px 0}.Poobadoo{background-position:-2532px 0}.Prisoner_1141{background-position:-2784px 0}.Shaman_Arderus{background-position:-3036px 0}.Short-Fuse_Felix{background-position:-3288px 0}.Sotzz_the_Scallywag{background-position:-3540px 0}.Tricksy_Trekksa{background-position:-3792px 0}.Trillia_Midwell{background-position:-4044px 0}.Yanonka_the_Rat-Wrangler{background-position:-4296px 0}
+#bounty-imgs {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    padding-top: 5px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.9);
+	user-select: none;
+}
+.path {
+    margin: auto;
+    display: none;
+    width: 80%;
+	max-width: 700px;
+}
+.land {max-width:none;}
+/* Guild Race */
+#guild_race{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(252px, 0fr));
+	margin: inherit
+}
+.race,.trek {background: #FC6;border: 5px double grey; margin: 5px; text-shadow: 2px 2px #000; color: white; font-size: 24px;height: 90px; text-align: center;}
+.race:hover, .trek:hover {
+	opacity: 0.7;
+	filter: alpha(opacity=70);
+}
+/* Trek */
+#guild_trek{
+	display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 0fr));
+    margin: inherit;
+}
+.trek {font-size:18px;height: 45px}
+.ez {background:#006400}
+.e {background:#2E8B57}
+.m {background:#FF8C00}
+.h {background:#DC143C}
+.aaaah {background:#8B0000}
+</style>
+<script>
+	// Copy
+	$(function() {
+		var clipboard = new Clipboard('.bounty, .race, .trek');
+		clipboard.on('success', function(e) {
+			$('#msg').text('Copied: '+e.text).fadeIn( 300 ).delay( 700 ).fadeOut( 400 );
+		});
+		$('.bounty').bind("contextmenu", function (e) {
+				$('#bounty-imgs').show();
+				$('#'+$(this).text().replace(/"/g,"").replace(/ /g,"_")).css('display','block');
+                e.preventDefault();
+        });
+		$('.trek').bind("contextmenu", function (e) {
+				window.open("https://wiki.guildwars2.com/wiki/"+$(this).text(),"_blank")
+                e.preventDefault();
+        });
+		$('#bounty-imgs').on('click', function(){
+			$('#bounty-imgs, .path').hide()
+		})
+	});
+	setTimeout(function() {
+		$('.trek').sort(function(a, b) {
+			if (a.textContent < b.textContent) {
+				return -1;
+			} else {
+				return 1;
+			}
+		}).appendTo('#guild_trek');
+	}, 500);
+	function trektoggle(){}
+</script>
+</head>
+
+<body>
+	<div class="navbar">
+		<a href="index.html">Main</a>
+		<a href="guild.html">Guild Info</a>
+		<a href="guild_missions.html">Guild Missions</a>
+		<a href="dungeon_calc.html">Dungeon Calculator</a>
+	</div>
+	<section>
+	<h1>Guild Bounties</h1>
+	Click to copy the bounty. Right click to see the path.
+	<div id="msg">Waiting for copy.</div>
+<div id="guild_bounty">
+	<div class="bounty 2-MULT" data-clipboard-text="2-MULT in Timberline Falls @[&BEwCAAA=]. Kill the sparks he spawns and toss them at him.">2-MULT</div>
+	<div class="bounty Ander_Wildman_Westward" data-clipboard-text="Ander Wildman Westward in Southsun Cove @[&BNUGAAA=] or [&BBEEAAA=] through Asura Gate. Swallowed by a Veteran Karka.">Ander "Wildman" Westward</div>
+	<div class="bounty Bookworm_Bwikki" data-clipboard-text="Bookworm Bwikki in Lornar's Pass @[&BFIGAAA=].">Bookworm Bwikki</div>
+	<div class="bounty Big_Mayana" data-clipboard-text="Big Mayana in Sparkfly Fen @[&BMgBAAA=]. Hides in a Suspicious Trees.">Big Mayana</div>
+	<div class="bounty Brekkabek" data-clipboard-text="Brekkabek in Harathi Hinterlands @[&BKcAAAA=].">Brekkabek</div>
+	<div class="bounty Crusader_Michiele" data-clipboard-text="Crusader Michiele in Sparkfly Fen @[&BMgBAAA=].">Crusader Michiele</div>
+	<div class="bounty Deputy_Brooke" data-clipboard-text="Deputy Brooke in Snowden Drifts @[&BLkAAAA=].">"Deputy" Brooke</div>
+	<div class="bounty Devious_Teesa" data-clipboard-text="Devious Teesa in Frostgorge Sound @[&BIECAAA=].">Devious Teesa</div>
+	<div class="bounty Diplomat_Tarban" data-clipboard-text="Diplomat Tarban in Brisban Wildlands @[&BGIAAAA=].">Diplomat Tarban</div>
+	<div class="bounty Half-Baked_Komali" data-clipboard-text="Half-Baked Komali in Mount Maelstrom @[&BMoCAAA=].">Half-Baked Komali</div>
+	<div class="bounty Poobadoo" data-clipboard-text="Poobadoo in Kessex Hills @[&BAoAAAA=].">Poobadoo</div>
+	<div class="bounty Prisoner_1141" data-clipboard-text="Prisoner 1141 in Iron Marches @[&BOgBAAA=].">Prisoner 1141</div>
+	<div class="bounty Shaman_Arderus" data-clipboard-text="Shaman Arderus in Fireheart Rise @[&BCYCAAA=].">Shaman Arderus</div>
+	<div class="bounty Short-Fuse_Felix" data-clipboard-text="Short-Fuse Felix in Diessa Plateau @[&BMkDAAA=].">Short-Fuse Felix</div>
+	<div class="bounty Sotzz_the_Scallywag" data-clipboard-text="Sotzz the Scallywag in Gendarran Fields @[&BJEBAAA=]. Hides in Suspicious Barrels.">Sotzz the Scallywag</div>
+	<div class="bounty Tricksy_Trekksa" data-clipboard-text="Tricksy Trekksa in Blazeridge Steppes @[&BE8DAAA=]. Disguised as Curious Cow, Mysterious Moa, Peculiar Pig, or Weird Wind Rider.">Tricksy Trekksa</div>
+	<div class="bounty Trillia_Midwell" data-clipboard-text="Trillia Midwell in Fields of Ruin @[&BNMAAAA=] or [&BCsDAAA=] through the Asura Gate.">Trillia Midwell</div>
+	<div class="bounty Yanonka_the_Rat-Wrangler" data-clipboard-text="Yanonka the Rat-Wrangler in Fields of Ruin @[&BE4BAAA=] or [&BCsDAAA=] through the Asura Gate. Interact with Suspicious Rats.">Yanonka the Rat-Wrangler</div>
+</div>
+<div id="bounty-imgs">
+	<img class="path" id="2-MULT" src="https://wiki.guildwars2.com/images/1/15/2-MULT%27s_path.jpg">
+	<img class="path land" id="Ander_Wildman_Westward" src="https://wiki.guildwars2.com/images/3/37/Ander_%22Wildman%22_Westward_map.jpg">
+	<img class="path" id="Bookworm_Bwikki" src="https://wiki.guildwars2.com/images/9/9a/Bookworm_Bwikki%27s_path.jpg">
+	<img class="path" id="Big_Mayana" src="https://wiki.guildwars2.com/images/2/24/Big_Mayana_Spawn.jpg">
+	<img class="path" id="Brekkabek" src="https://wiki.guildwars2.com/images/7/77/Brekkabek%27s_path.jpg">
+	<img class="path" id="Crusader_Michiele" src="https://wiki.guildwars2.com/images/2/25/Crusader_Michiele%27s_path.jpg">
+	<img class="path land" id="Deputy_Brooke" src="https://wiki.guildwars2.com/images/1/11/Deputy_Brooke%27s_pathing_map.jpg">
+	<img class="path land" id="Devious_Teesa" src="https://wiki.guildwars2.com/images/b/bf/Devious_Teesa%27s_path.jpg">
+	<img class="path land" id="Diplomat_Tarban" src="https://wiki.guildwars2.com/images/4/4f/Diplomat_Tarban_Path.jpg">
+	<img class="path land" id="Half-Baked_Komali" src="https://wiki.guildwars2.com/images/8/85/Half-Baked_Komali%27s_path.jpg">
+	<img class="path land" id="Poobadoo" src="https://wiki.guildwars2.com/images/d/dc/Poobadoo%27s_path.jpg">
+	<img class="path" id="Prisoner_1141" src="https://wiki.guildwars2.com/images/a/aa/Prisoner_1141%27s_path.jpg">	
+	<img class="path" id="Shaman_Arderus" src="https://wiki.guildwars2.com/images/7/7a/Shaman_Arderus%27s_path.jpg">
+	<img class="path land" id="Short-Fuse_Felix" src="https://wiki.guildwars2.com/images/e/e1/Short-Fuse_Felix_Path.jpg">
+	<img class="path land" id="Sotzz_the_Scallywag" src="https://wiki.guildwars2.com/images/3/30/Sotzz_the_Scallywag_Spawn.jpg">
+	<img class="path" id="Tricksy_Trekksa" src="https://wiki.guildwars2.com/images/e/e5/Tricksy_Trekksa%27s_path.jpg">
+	<img class="path" id="Trillia_Midwell" src="https://wiki.guildwars2.com/images/e/e2/Trillia_Midwell_Path.jpg">
+	<img class="path land" id="Yanonka_the_Rat-Wrangler" src="https://wiki.guildwars2.com/images/9/97/Yanonka_Spawn.jpg">
+</div>
+<h1>Guild Races</h1>
+<div id="guild_race">
+	<div class="race" data-clipboard-text="Bear Lope race @[&BOkAAAA=].">Bear Lope</div>
+	<div class="race" data-clipboard-text="Chicken Run race @[&BEwBAAA=].">Chicken Run</div>
+	<div class="race" data-clipboard-text="Crab Scuttle race @[&BNwGAAA=].">Crab Scuttle</div>
+	<div class="race" data-clipboard-text="Devourer Burrow race @[&BMkDAAA=].">Devourer Burrow</div>
+	<div class="race" data-clipboard-text="Ghost Wolf Run race @[&BKUAAAA=].">Ghost Wolf Run</div>
+	<div class="race" data-clipboard-text="Quaggan Paddle race @[&BIACAAA=].">Quaggan Paddle</div>
+	<div class="race" data-clipboard-text="Spider Scurry race @[&BF0CAAA=].">Spider Scurry</div>
+</div>
+<h1>Treks <button onclick="$('.m,.h,.aaaah').toggle();">Show Easy</button></h1>
+Right click to open the wiki page.<br><br>
+<div id="guild_trek">
+<!-- Black Citadel -->
+<div class="trek ez" data-clipboard-text="Freestand Scaffold @[&BKwDAAA=].">Freestand Scaffold</div>
+<div class="trek ez" data-clipboard-text="Broken Falls Courtyard @[&BKwDAAA=].">Broken Falls Courtyard</div>
+<div class="trek ez" data-clipboard-text="Wheelport Pub @[&BKUDAAA=].">Wheelport Pub</div>
+<div class="trek ez" data-clipboard-text="Junker's Apex @[&BDcEAAA=].">Junker's Apex</div>
+<div class="trek ez" data-clipboard-text="Sparwind's Lounge @[&BK0DAAA=].">Sparwind's Lounge</div>
+<div class="trek ez" data-clipboard-text="Scriptorium Nook @[&BKcDAAA=].">Scriptorium Nook</div>
+<!-- Divinity's Reach -->
+<div class="trek ez" data-clipboard-text="Rurik's View @[&BCsDAAA=].">Rurik's View</div>
+<div class="trek ez" data-clipboard-text="Melandru's Fount @[&BCcDAAA=].">Melandru's Fount</div>
+<div class="trek ez" data-clipboard-text="Grenth's Pavillion @[&BCQDAAA=].">Grenth's Pavillion</div>
+<div class="trek ez" data-clipboard-text="Eastlurk Alley @[&BCMDAAA=].">Eastlurk Alley</div>
+<div class="trek ez" data-clipboard-text="Mina's Target Shoot @[&BCoDAAA=].">Mina's Target Shoot</div>
+<div class="trek ez" data-clipboard-text="Turai Tavern Stillroom @[&BCgDAAA=].">Turai Tavern Stillroom</div>
+<!-- Hoelbrak -->
+<div class="trek ez" data-clipboard-text="Trader's Stash @[&BIoDAAA=].">Trader's Stash</div>
+<div class="trek ez" data-clipboard-text="Grimsdottir's Duty@[&BIsDAAA=].">Grimsdottir's Duty</div>
+<div class="trek ez" data-clipboard-text="Raven Nook @[&BIgDAAA=].">Raven Nook</div>
+<div class="trek ez" data-clipboard-text="Kegbrawl Watch @[&BJADAAA=].">Kegbrawl Watch</div>
+<div class="trek ez" data-clipboard-text="Brothers' Notch @[&BJADAAA=].">Brothers' Notch</div>
+<div class="trek ez" data-clipboard-text="Kaldar's Hot Seat @[&BI0DAAA=].">Kaldar's Hot Seat</div>
+<!-- Rata Sum -->
+<div class="trek ez" data-clipboard-text="Bluup's Comeuppance @[&BLgEAAA=].">Bluup's Comeuppance</div>
+<div class="trek ez" data-clipboard-text="Port Authority Lost and Found @[&BAcFAAA=].">Port Authority Lost and Found</div>
+<div class="trek ez" data-clipboard-text="Magihedron Corner @[&BBMEAAA=].">Magihedron Corner</div>
+<div class="trek ez" data-clipboard-text="Ideation Leap @[&BLUEAAA=].">Ideation Leap</div>
+<div class="trek ez" data-clipboard-text="Skibo Hall Dormitory	@[&BLkEAAA=].">Skibo Hall Dormitory</div>
+<div class="trek ez" data-clipboard-text="Flakk's Lapidary Nook @[&BLYEAAA=].">Flakk's Lapidary Nook</div>
+<!-- The Grove -->
+<div class="trek ez" data-clipboard-text="Dawngleam Pergola @[&BLwEAAA=].">Dawngleam Pergola</div>
+<div class="trek ez" data-clipboard-text="Black Lion Root Cellar @[&BLsEAAA=].">Black Lion Root Cellar</div>
+<div class="trek ez" data-clipboard-text="Gardenroot Alcove @[&BLsEAAA=].">Gardenroot Alcove</div>
+<div class="trek ez" data-clipboard-text="Backroot Fountain @[&BLsEAAA=].">Backroot Fountain</div>
+<div class="trek ez" data-clipboard-text="Constellation Parapet @[&BLsEAAA=].">Constellation Parapet</div>
+<div class="trek ez" data-clipboard-text="Necrolith Landing @[&BBIEAAA=].">Necrolith Landing</div>
+
+<!-- Metrica Province -->
+<div class="trek e" data-clipboard-text="Wildflame Monitor @[&BEAAAAA=].">Wildflame Monitor</div>
+<div class="trek e" data-clipboard-text="Soren Draa Rest Stop @[&BEAAAAA=].">Soren Draa Rest Stop</div>
+<div class="trek e" data-clipboard-text="Fisher's Crag @[&BK4EAAA=].">Fisher's Crag</div>
+<div class="trek e" data-clipboard-text="Master Control LIN39 @[&BEcAAAA=].">Master Control LIN39</div>
+<div class="trek e" data-clipboard-text="Jaguar Pride Den @[&BEcAAAA=].">Jaguar Pride Den</div>
+<div class="trek e" data-clipboard-text="Thaumanova Spillway @[&BEcAAAA=].">Thaumanova Spillway</div>
+<!-- Plains of Ashford -->
+<div class="trek e" data-clipboard-text="Cademkrall Overlook @[&BIgBAAA=].">Cademkrall Overlook</div>
+<div class="trek e" data-clipboard-text="Doefalls Court @[&BIcBAAA=].">Doefalls Court</div>
+<div class="trek e" data-clipboard-text="Irondock Viewpoint @[&BIkBAAA=].">Irondock Viewpoint</div>
+<div class="trek e" data-clipboard-text="Phasmatis Prospect @[&BIoBAAA=].">Phasmatis Prospect</div>
+<div class="trek e" data-clipboard-text="Skalestash Hideaway @[&BIEBAAA=].">Skalestash Hideaway</div>
+<div class="trek e" data-clipboard-text="Watchpoint Decimus @[&BJgDAAA=].">Watchpoint Decimus</div>
+<!-- Queensdale -->
+<div class="trek e" data-clipboard-text="Altar Brook Lair @[&BPIAAAA=].">Altar Brook Lair</div>
+<div class="trek e" data-clipboard-text="Beetlestone Mirador @[&BPoAAAA=].">Beetlestone Mirador</div>
+<div class="trek e" data-clipboard-text="Claypool Bailey @[&BPYAAAA=].">Claypool Bailey</div>
+<div class="trek e" data-clipboard-text="Destiny's Guildhall @[&BO8AAAA=].">Destiny's Guildhall</div>
+<div class="trek e" data-clipboard-text="Heartwood Honey Cache @[&BPMAAAA=].">Heartwood Honey Cache</div>
+<div class="trek e" data-clipboard-text="Lakebottom Underpass @[&BPkAAAA=].">Lakebottom Underpass</div>
+<!-- Wayfarer Foothills -->
+<div class="trek e" data-clipboard-text="Arctodus Haunt @[&BH4BAAA=].">Arctodus Haunt</div>
+<div class="trek e" data-clipboard-text="Kevach's Strongroom @[&BMEDAAA=].">Kevach's Strongroom</div>
+<div class="trek e" data-clipboard-text="Lionguard Larder @[&BH0BAAA=].">Lionguard Larder</div>
+<div class="trek e" data-clipboard-text="Moleberia Prison @[&BHgBAAA=].">Moleberia Prison</div>
+<div class="trek e" data-clipboard-text="Osenfold Counterweights @[&BAEEAAA=].">Osenfold Counterweights</div>
+<div class="trek e" data-clipboard-text="Reverberant's Watch @[&BHUBAAA=].">Reverberant's Watch</div>
+<!-- Caledon Forest -->
+<div class="trek e" data-clipboard-text="Briarthorn Barrier @[&BDUBAAA=].">Briarthorn Barrier</div>
+<div class="trek e" data-clipboard-text="Green Moa Paddock @[&BDwBAAA=].">Green Moa Paddock</div>
+<div class="trek e" data-clipboard-text="Imphaunt Hallow @[&BEEBAAA=].">Imphaunt Hallow</div>
+<div class="trek e" data-clipboard-text="Soggorsort Rotunda @[&BD0BAAA=].">Soggorsort Rotunda</div>
+<div class="trek e" data-clipboard-text="Unseen Scratch @[&BDwBAAA=].">Unseen Scratch</div>
+<div class="trek e" data-clipboard-text="Widd's Folly @[&BDoBAAA=].">Widd's Folly</div>
+<!-- Diessa Plateau -->
+<div class="trek e" data-clipboard-text="Anya's Patch @[&BN4AAAA=].">Anya's Patch</div>
+<div class="trek e" data-clipboard-text="Blackblade Butte @[&BNwAAAA=].">Blackblade Butte</div>
+<div class="trek e" data-clipboard-text="Blasted Sepulchre @[&BNoAAAA=].">Blasted Sepulchre</div>
+<div class="trek e" data-clipboard-text="Drakehatch Shore @[&BGQBAAA=].">Drakehatch Shore</div>
+<div class="trek e" data-clipboard-text="Holystone Sanctum @[&BMUDAAA=].">Holystone Sanctum</div>
+<div class="trek e" data-clipboard-text="Strongpaw's Garden @[&BN0AAAA=].">Strongpaw's Garden</div>
+<!-- Kessex Hills -->
+<div class="trek e" data-clipboard-text="Defiled Delve @[&BBEAAAA=].">Defiled Delve</div>
+<div class="trek e" data-clipboard-text="Isgarren Viewpoint @[&BBEAAAA=].">Isgarren Viewpoint</div>
+<div class="trek e" data-clipboard-text="Kari's Hot Spot @[&BBIAAAA=].">Kari's Hot Spot</div>
+<div class="trek e" data-clipboard-text="Lychcroft Wardenship @[&BAwAAAA=].">Lychcroft Wardenship</div>
+<div class="trek e" data-clipboard-text="Overlord Lodge @[&BAQAAAA=].">Overlord Lodge</div>
+<div class="trek e" data-clipboard-text="Togatl Shore @[&BBAAAAA=].">Togatl Shore</div>
+<!-- Snowden Drifts -->
+<div class="trek e" data-clipboard-text="Badjelly Kelpbed @[&BLwAAAA=].">Badjelly Kelpbed</div>
+<div class="trek e" data-clipboard-text="Cave Bear Cache @[&BL8AAAA=].">Cave Bear Cache</div>
+<div class="trek e" data-clipboard-text="Hidden Owl Distillery @[&BMEAAAA=].">Hidden Owl Distillery</div>
+<div class="trek e" data-clipboard-text="Isenfell Wash @[&BLgAAAA=].">Isenfell Wash</div>
+<div class="trek e" data-clipboard-text="Snowden Safehouse @[&BLkAAAA=].">Snowden Safehouse</div>
+<div class="trek e" data-clipboard-text="Snowhowl Den @[&BL8AAAA=].">Snowhowl Den</div>
+
+<!-- Blazeridge Steppes -->
+<div class="trek m" data-clipboard-text="Burstbubble Blind @[&BPsBAAA=].">Burstbubble Blind</div>
+<div class="trek m" data-clipboard-text="Canyonweb Cave @[&BAQCAAA=].">Canyonweb Cave</div>
+<div class="trek m" data-clipboard-text="Forgotten Grotto @[&BAECAAA=].">Forgotten Grotto</div>
+<div class="trek m" data-clipboard-text="Sharkhollow's Edge @[&BPwBAAA=].">Sharkhollow's Edge</div>
+<div class="trek m" data-clipboard-text="Steelband's Tunnel @[&BPsBAAA=].">Steelband's Tunnel</div>
+<div class="trek m" data-clipboard-text="Vacant Hermitage @[&BP8BAAA=].">Vacant Hermitage</div>
+<!-- Bloodtide Coast -->
+<div class="trek m" data-clipboard-text="Blood Ooze Gallery @[&BK0BAAA=].">Blood Ooze Gallery</div>
+<div class="trek m" data-clipboard-text="Castavall Corner @[&BK4BAAA=].">Castavall Corner</div>
+<div class="trek m" data-clipboard-text="Covington's Stowage @[&BKgBAAA=].">Covington's Stowage</div>
+<div class="trek m" data-clipboard-text="Pochtecatl's Desire @[&BK8BAAA=].">Pochtecatl's Desire</div>
+<div class="trek m" data-clipboard-text="Portmatt's Promontory @[&BKQBAAA=].">Portmatt's Promontory</div>
+<div class="trek m" data-clipboard-text="Risewild Green @[&BKcBAAA=].">Risewild Green</div>
+<!-- Brisban Wildlands -->
+<div class="trek m" data-clipboard-text="East End Falls @[&BGAAAAA=].">East End Falls</div>
+<div class="trek m" data-clipboard-text="Gallow Canyons @[&BGMAAAA=].">Gallow Canyons</div>
+<div class="trek m" data-clipboard-text="Gnashar's Viewpoint @[&BF0AAAA=].">Gnashar's Viewpoint</div>
+<div class="trek m" data-clipboard-text="Tekki's Drawing Board @[&BGUAAAA=].">Tekki's Drawing Board</div>
+<div class="trek m" data-clipboard-text="Toxal Spill @[&BGQAAAA=].">Toxal Spill</div>
+<div class="trek m" data-clipboard-text="Ulta Scraproom @[&BGUAAAA=].">Ulta Scraproom</div>
+<!-- Dredgehaunt Cliffs -->
+<div class="trek m" data-clipboard-text="Forager's Midden @[&BFsCAAA=].">Forager's Midden</div>
+<div class="trek m" data-clipboard-text="Foreman's Recess @[&BFgCAAA=].">Foreman's Recess</div>
+<div class="trek m" data-clipboard-text="Ramview Peak @[&BGQCAAA=].">Ramview Peak</div>
+<div class="trek m" data-clipboard-text="Scholar's Blind @[&BFwCAAA=].">Scholar's Blind</div>
+<div class="trek m" data-clipboard-text="The Workers' Stores @[&BFoCAAA=].">The Workers' Stores</div>
+<div class="trek m" data-clipboard-text="Tower of Tribulation @[&BD8FAAA=].">Tower of Tribulation</div>
+<!-- Fields of Ruin -->
+<div class="trek m" data-clipboard-text="Brandstrike Dig @[&BEsBAAA=].">Brandstrike Dig</div>
+<div class="trek m" data-clipboard-text="Cymbel's Glen @[&BE8BAAA=].">Cymbel's Glen</div>
+<div class="trek m" data-clipboard-text="Drakecleft Shelf @[&BEwBAAA=].">Drakecleft Shelf</div>
+<div class="trek m" data-clipboard-text="Founder's Flagon Hearth @[&BD0EAAA=].">Founder's Flagon Hearth	</div>
+<div class="trek m" data-clipboard-text="Hermit's Roost @[&BNgAAAA=].">Hermit's Roost</div>
+<div class="trek m" data-clipboard-text="Narrowkraal Crossing @[&BE8BAAA=].">Narrowkraal Crossing</div>
+<!-- Gendarran Fields -->
+<div class="trek m" data-clipboard-text="Cutthroat's Rest @[&BM0DAAA=].">Cutthroat's Rest</div>
+<div class="trek m" data-clipboard-text="Lawen Grotto @[&BIsBAAA=].">Lawen Grotto</div>
+<div class="trek m" data-clipboard-text="Raptor's Perch @[&BO4AAAA=].">Raptor's Perch</div>
+<div class="trek m" data-clipboard-text="Stonebore Spiderhole @[&BIwBAAA=].">Stonebore Spiderhole	</div>
+<div class="trek m" data-clipboard-text="Wassa's Terrace @[&BIsBAAA=].">Wassa's Terrace</div>
+<div class="trek m" data-clipboard-text="Wrelk's Salon @[&BJQBAAA=].">Wrelk's Salon</div>
+<!-- Harathi Hinterlands -->
+<div class="trek m" data-clipboard-text="Bandit's Cabbage Patch @[&BKgAAAA=].">Bandit's Cabbage Patch</div>
+<div class="trek m" data-clipboard-text="Elise's Surprise @[&BKsAAAA=].">Elise's Surprise</div>
+<div class="trek m" data-clipboard-text="Fawcett's Porch @[&BLIAAAA=].">Fawcett's Porch</div>
+<div class="trek m" data-clipboard-text="Guardian Overwatch @[&BKkAAAA=].">Guardian Overwatch</div>
+<div class="trek m" data-clipboard-text="Heidi's Showpiece @[&BKcAAAA=].">Heidi's Showpiece</div>
+<div class="trek m" data-clipboard-text="Skyshine Scratch @[&BKkAAAA=].">Skyshine Scratch</div>
+<!-- Iron Marches -->
+<div class="trek m" data-clipboard-text="Dirtclaw Cleft @[&BOMBAAA=].">Dirtclaw Cleft</div>
+<div class="trek m" data-clipboard-text="Firewatch Flybridge @[&BO0BAAA=].">Firewatch Flybridge</div>
+<div class="trek m" data-clipboard-text="Raptor's Aerie @[&BOsBAAA=].">Raptor's Aerie</div>
+<div class="trek m" data-clipboard-text="Scourgejaw Watchtower @[&BOcBAAA=].">Scourgejaw Watchtower</div>
+<div class="trek m" data-clipboard-text="Sentinel Sink @[&BOkBAAA=].">Sentinel Sink</div>
+<div class="trek m" data-clipboard-text="Skalecatch Butcher Shop @[&BOcBAAA=].">Skalecatch Butcher Shop</div>
+<!-- Lornar's Pass -->
+<div class="trek m" data-clipboard-text="Cave Spider Nidus @[&BJgBAAA=].">Cave Spider Nidus</div>
+<div class="trek m" data-clipboard-text="Ettinbreath Lair @[&BOYAAAA=].">Ettinbreath Lair</div>
+<div class="trek m" data-clipboard-text="Mistriven Shelf @[&BJkBAAA=].">Mistriven Shelf</div>
+<div class="trek m" data-clipboard-text="Steamscrap Overlook @[&BOoAAAA=].">Steamscrap Overlook</div>
+<div class="trek m" data-clipboard-text="Trolltrap Pit @[&BOkAAAA=].">Trolltrap Pit</div>
+<div class="trek m" data-clipboard-text="Venison Hollow @[&BOUAAAA=].">Venison Hollow</div>
+<!-- Sparkfly Fen -->
+<div class="trek m" data-clipboard-text="Firefrog Springs @[&BMwBAAA=].">Firefrog Springs</div>
+<div class="trek m" data-clipboard-text="Orvanic Sourcewaters @[&BMkBAAA=].">Orvanic Sourcewaters</div>
+<div class="trek m" data-clipboard-text="Saltflood Altar @[&BMcBAAA=].">Saltflood Altar</div>
+<div class="trek m" data-clipboard-text="Shattered Loft @[&BMUBAAA=].">Shattered Loft</div>
+<div class="trek m" data-clipboard-text="Siamoth Refuge @[&BM4BAAA=].">Siamoth Refuge</div>
+<div class="trek m" data-clipboard-text="Usharr's Threshold @[&BMsBAAA=].">Usharr's Threshold</div>
+<!-- Timberline Falls -->
+<div class="trek m" data-clipboard-text="Frozen Antrum @[&BE8CAAA=].">Frozen Antrum</div>
+<div class="trek m" data-clipboard-text="Hawkeye Perch @[&BEUCAAA=].">Hawkeye Perch</div>
+<div class="trek m" data-clipboard-text="Meltwater Cave @[&BEgCAAA=].">Meltwater Cave</div>
+<div class="trek m" data-clipboard-text="Skalesplash Falls @[&BEYCAAA=].">Skalesplash Falls</div>
+<div class="trek m" data-clipboard-text="Talus Steps @[&BEQCAAA=].">Talus Steps</div>
+<div class="trek m" data-clipboard-text="Wikk's Gate @[&BEwCAAA=].">Wikk's Gate</div>
+
+<!-- Fireheart Rise -->
+<div class="trek h" data-clipboard-text="Heart Speaks Notch @[&BB0CAAA=].">Heart Speaks Notch</div>
+<div class="trek h" data-clipboard-text="Lily's Bivvy @[&BCACAAA=].">Lily's Bivvy</div>
+<div class="trek h" data-clipboard-text="Orecart Hoist @[&BBcCAAA=].">Orecart Hoist</div>
+<div class="trek h" data-clipboard-text="Provatum Carcer @[&BCYCAAA=].">Provatum Carcer</div>
+<div class="trek h" data-clipboard-text="Skalefound Cove @[&BBgCAAA=].">Skalefound Cove</div>
+<div class="trek h" data-clipboard-text="Tarstar Copse @[&BB0CAAA=].">Tarstar Copse</div>
+<!-- Frostgorge Sound -->
+<div class="trek h" data-clipboard-text="Broodmother Falls @[&BIQCAAA=].">Broodmother Falls</div>
+<div class="trek h" data-clipboard-text="Corruption's Teeth @[&BIYCAAA=].">Corruption's Teeth</div>
+<div class="trek h" data-clipboard-text="Icewurm Trench @[&BH8CAAA=].">Icewurm Trench</div>
+<div class="trek h" data-clipboard-text="Skelknest Borehole @[&BHwCAAA=].">Skelknest Borehole</div>
+<div class="trek h" data-clipboard-text="Source of Lament @[&BIECAAA=].">Source of Lament</div>
+<div class="trek h" data-clipboard-text="The People's Deadlock @[&BHkCAAA=].">The People's Deadlock</div>
+<!-- Mount Maelstrom -->
+<div class="trek h" data-clipboard-text="Deepmire Diver @[&BNECAAA=].">Deepmire Diver</div>
+<div class="trek h" data-clipboard-text="Droknah's Gate @[&BNQCAAA=].">Droknah's Gate</div>
+<div class="trek h" data-clipboard-text="Fire Imp Pocket @[&BM0CAAA=].">Fire Imp Pocket</div>
+<div class="trek h" data-clipboard-text="Rata Pten Portico @[&BMkCAAA=].">Rata Pten Portico</div>
+<div class="trek h" data-clipboard-text="Restless Footings @[&BNICAAA=].">Restless Footings</div>
+<div class="trek h" data-clipboard-text="Whitland Sinkhole @[&BNQCAAA=].">Whitland Sinkhole</div>
+<!-- Southsun Cove -->
+<div class="trek h" data-clipboard-text="Monument to the Ancient One @[&BNgGAAA=].">Monument to the Ancient One</div>
+<div class="trek h" data-clipboard-text="Reef Drake Nesting Grounds @[&BNUGAAA=].">Reef Drake Nesting Grounds</div>
+<div class="trek h" data-clipboard-text="Sandwurm Prowl @[&BNUGAAA=].">Sandwurm Prowl</div>
+<div class="trek h" data-clipboard-text="Steampipe Perch @[&BNAGAAA=].">Steampipe Perch</div>
+<div class="trek h" data-clipboard-text="Steamy Steps @[&BNAGAAA=].">Steamy Steps</div>
+<div class="trek h" data-clipboard-text="The Karka Klub @[&BNUGAAA=].">The Karka Klub</div>
+<!-- Straits of Devastation -->
+<div class="trek h" data-clipboard-text="Drowned Plaza @[&BO0CAAA=].">Drowned Plaza</div>
+<div class="trek h" data-clipboard-text="Fathom Five Forcefield @[&BPICAAA=].">Fathom Five Forcefield</div>
+<div class="trek h" data-clipboard-text="Lightfoot Dock @[&BPACAAA=].">Lightfoot Dock</div>
+<div class="trek h" data-clipboard-text="Sepulchre Skylight @[&BNIEAAA=].">Sepulchre Skylight</div>
+<div class="trek h" data-clipboard-text="Stentor Shelter @[&BO0CAAA=].">Stentor Shelter</div>
+<div class="trek h" data-clipboard-text="Vizier's Anteport @[&BPcCAAA=].">Vizier's Anteport</div>
+
+<!-- Cursed Shore -->
+<div class="trek aaaah" data-clipboard-text="Anthem's Hold @[&BOQGAAA=].">Anthem's Hold</div>
+<div class="trek aaaah" data-clipboard-text="Cache of the Pursued @[&BCEDAAA=].">Cache of the Pursued</div>
+<div class="trek aaaah" data-clipboard-text="Sea Scorpion's Eye @[&BB4DAAA=].">Scorpion's Eye</div>
+<div class="trek aaaah" data-clipboard-text="Tactical Retreat @[&BOQGAAA=].">Tactical Retreat</div>
+<div class="trek aaaah" data-clipboard-text="Verdance Font @[&BBsDAAA=].">Verdance Font</div>
+<div class="trek aaaah" data-clipboard-text="Winterknell Impasse @[&BBgDAAA=].">Winterknell Impasse</div>
+<!-- Malchor's Leap -->
+<div class="trek aaaah" data-clipboard-text="Captain's Berth @[&BLICAAA=].">Captain's Berth</div>
+<div class="trek aaaah" data-clipboard-text="Cathedral's Cavity @[&BKsCAAA=].">Cathedral's Cavity</div>
+<div class="trek aaaah" data-clipboard-text="Delight's Balcony @[&BKYCAAA=].">Delight's Balcony</div>
+<div class="trek aaaah" data-clipboard-text="Forbidden Shear @[&BK8CAAA=].">Forbidden Shear</div>
+<div class="trek aaaah" data-clipboard-text="Spectrehaunt Socket @[&BLICAAA=].">Spectrehaunt Socket</div>
+<div class="trek aaaah" data-clipboard-text="Upsilon Hyperboloid @[&BKgCAAA=].">Upsilon Hyperboloid</div>
+</div>
+	</section>
+</body>
+
+</html>

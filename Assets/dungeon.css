@@ -1,0 +1,118 @@
+@font-face {
+	font-family: Third Rail;
+	src: url(../fonts/Third%20Rail%20-%20Demo.ttf);
+}
+@media (max-width: 992px){
+    .sticky-top {
+        position: relative!important;
+    }
+}
+
+.navbar-brand {
+	font-family: Third Rail;
+}
+#section {
+    border: 1px solid #FD0082;
+    padding: 20px 35px 40px 35px;
+    border-top: none;border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+body{
+	background:#000;
+	color:#d4d5d5
+}
+
+table {
+	border:1px solid;
+}
+td, th {
+	padding:10px;
+}
+tr {
+	border-bottom:1px solid;
+}
+hr {
+	border-color:#d5d4d4
+}
+
+a[href*="//wiki.guildwars2.com/wiki/"]:after, a[href*="//www.gw2bltc.com"]:after {
+	content: '';
+	background: url(../images/Icon_External_Link.png) center right no-repeat;
+	padding-right: 13px;
+	position: relative;
+	left: 2px;
+}
+
+/* Dungeon Calc */
+#apikey_container {
+	margin: 0 15px;
+    margin-bottom: 15px;
+}
+#apikey_container fieldset {
+    display: block;
+    margin-inline-start: 2px;
+    margin-inline-end: 2px;
+    padding-block-start: 0.35em;
+    padding-inline-start: 0.75em;
+    padding-inline-end: 0.75em;
+    padding-block-end: 0.625em;
+    min-inline-size: min-content;
+    border-width: 2px;
+    border-style: groove;
+    border-color: red;
+    border-image: initial;}
+#apikey_container legend {
+	width: auto;
+}
+#user_currency td:nth-of-type(1) {
+	padding-right:15px;
+}
+#user_currency td:nth-of-type(3){
+	padding-left:0;
+}
+.currency_icon{
+	max-height:25px;
+}
+.item-details {
+	line-height: 32px;
+}
+.item-details img {
+    height: 32px;
+	margin-right: 10px;
+}
+.used {
+	text-decoration: line-through;
+    opacity: 0.5;
+}
+.calculation p {
+    margin:10px 30px;
+}
+
+.collection_could_do, .collection_completed {
+    background:#FD0082;
+    padding:10px;
+    border:1px solid #DD2B4E;
+    text-align:center;
+    font-weight:bold;
+    width:fit-content;
+    margin-left: auto!important;
+    margin-right: auto!important;
+}
+
+/* Token Data */
+[data-type-itemclass="TwoHand"]:not(.used):after {
+    content:' (390 Tokens)'
+}
+[data-type-itemclass="OneHand"]:not(.used):after, [data-type="Leggings"]:not(.used):after {
+    content:' (300 Tokens)'
+}
+[data-type-itemclass="OffHand"]:not(.used):after, [data-type="Shoulders"]:not(.used):after {
+    content:' (210 Tokens)'
+}
+
+[data-type="Helm"]:not(.used):after, [data-type="Gloves"]:not(.used):after, [data-type="Boots"]:not(.used):after {
+    content:' (180 Tokens)'
+}
+[data-type="Coat"]:not(.used):after {
+    content:' (330 Tokens)'
+}

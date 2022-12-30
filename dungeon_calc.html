@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+	<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="Assets/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="Assets/dungeon.css">
+    <script src="Assets/jquery-3.4.1.min.js"></script>
+    <script src="Assets/bootstrap.bundle.min.js"></script>
+    <script src="Assets/DungeonCalc.js"></script>
+    <title>Dungeon Calculator</title>
+    <style>
+a h2 {
+    color:white;
+    background:#AD0014;
+	border:1px solid #DD2B4E;
+    padding:5px;
+    padding-left:15px;
+}
+a h2:hover {
+    background:#780006;
+}
+a:hover {
+    text-decoration:none;
+}
+.row.weapon {margin-bottom:15px}
+	</style>
+	</head>
+	<body>
+	<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="true" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+		<div class="navbar-collapse collapse show" id="navbarNav" style="">
+			<ul class="navbar-nav">
+				<li class="nav-item">
+					<a class="nav-link" href="index.html">Main</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="guild.html">Guild Info Viewer</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="guild_missions.html">Guild Missions</a>
+				</li><li class="nav-item">
+					<a class="nav-link" href="dungeon_calc.html">Dungeon Calculator</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+    <div id="section" class="container">
+		<div id="apikey_container">
+			<fieldset>
+			<legend title="More Info and Help!" style="cursor: pointer;" onclick="$('#api_help').toggle();">API Key  </legend>
+				<div id="api_help" style="display:none;">
+				<dl>
+				  <dt>What is an API key?</dt>
+				  <dd>-- Its an application programming interface that allows 3rd parties to <b>view data</b> related to your Guild Wars 2 account.</dd>
+				  <dd>-- It can <b>NOT</b> change things on your account. ONLY VIEW them.</dd>
+				  <dt>How to get one?</dt>
+				  <dd>-- Go to <a href="https://account.arena.net/login?redirect_uri=%2Fapplications">https://account.arena.net/login?redirect_uri=%2Fapplications</a></dd>
+				  <dd>-- Check <code>account</code>, <code>wallet</code>, and <code>progression</code></dd>
+				  <dt>Why do we need access to the wallet?</dt>
+				  <dd>--  Dungeon Tokens are stored in the wallet.</dd>
+				  <dt>Why do we need access to progression?</dt>
+				  <dd>--  Can't see dungeon related achievements without it.</dd>
+				</dl>
+				</div>
+				API Key: <span id="api_status">No Key Added.</span><input id="apikey" type="text" style="width:100%"><div style="margin-top:10px">
+				<input type="button" value="Apply Key" onclick="setAPIkey();"> <input type="button" value="Remove Key" onclick="removeAPIkey();"> <input type="button" value="Info" onclick="$('#api_help').toggle();"></div>
+			</fieldset>
+			</div>
+		<h1>Dungeon Calculator!</h1>
+		<p>To do one collection : 10,290 ;; 6150 for weapons and 4140 for armor</p>
+		<hr>
+		<div class="row">
+			<div class="col" id="Dungeon_Calulator">
+				<h2>Your Currency</h2>
+				<table id="user_currency">
+					<thead><tr><th>Currency</th><th colspan="2">Amount</th></tr></thead>
+					<tr id="AC_currency"></tr>
+					<tr id="CM_currency"></tr>
+					<tr id="TA_currency"></tr>
+					<tr id="SE_currency"></tr>
+					<tr id="CoF_currency"></tr>
+					<tr id="HotW_currency"></tr>
+					<tr id="CoE_currency"></tr>
+					<tr id="Arah_currency"></tr>
+				</table>
+			</div>
+			<div class="col" id="Dungeon_Frequenter">
+				<h2>Dungeon Frequenter (<span id="dungeonFreq_Counter">X</span> / 8)</h2>
+				<!-- Damn ANet and their weird ass achievement data -->
+				<table>
+					<tr><td bit="4" title="Ascalonian Catacombs Story">AC Story</td><td bit="5" title="Catacombs Explorable—Hodgins's Path">AC 1</td><td bit="6" title="Catacombs Explorable—Detha's Path">AC 2</td><td bit="7" title="Catacombs Explorable—Tzark's Path">AC 3</td></tr>
+					<tr><td bit="12" title="Caudecus's Manor Story">CM Story</td><td bit="13" title="Manor Explorable—Asura Path">CM 1</td><td bit="14" title="Manor Explorable—Seraph Path">CM 2</td><td bit="15" title="Manor Explorable—Butler's Path">CM 3</td></tr>
+					<tr><td bit="20" title="Twilight Arbor Story">TA Story</td><td bit="21" title="Twilight Explorable—Leurent's Path">TA Up</td><td bit="23" title="Twilight Explorable—Aetherpath">Aether</td><td bit="22" title="Twilight Explorable—Vevina's Path">TA Forward</td></tr>
+					<tr><td bit="16" title="Sorrow's Embrace Story">SE Story</td><td bit="17" title="Sorrow's Explorable—Fergg's Path">SE 1</td><td bit="18" title="Sorrow's Explorable—Rasolov's Path">SE 2</td><td bit="19" title="Sorrow's Explorable—Koptev's Path">SE 3</td></tr>
+					<tr><td bit="28" title="Citadel of Flame Story">CoF Story</td><td bit="29" title="Citadel Explorable—Ferrah's Path">CoF 1</td><td bit="30" title="Citadel Explorable—Magg's Path">CoF 2</td><td bit="31" title="Citadel Explorable—Rhiannon's Path">CoF 3</td></tr>
+					<tr><td bit="24" title="Honor of the Waves Story">HotW Story</td><td bit="25" title="Honor Explorable—Butcher's Path">HotW 1</td><td bit="26" title="Honor Explorable—Plunderer's Path">HotW 2</td><td bit="27" title="Honor Explorable—Zealot's Path">HotW 3</td></tr>
+					<tr><td bit="0" title="Crucible of Eternity Story">CoE Story</td><td bit="1" title="Crucible Explorable—Submarine Path">CoE 1</td><td bit="2" title="Crucible Explorable—Teleporter Path">CoE 2</td><td bit="3" title="Crucible Explorable—Front Door Path">CoE 3</td></tr>
+					<tr><td bit="8" title="Arah Explorable—Jotun Path">Arah 1</td><td bit="9" title="Arah Explorable—Mursaat Path">Arah 2</td><td bit="10" title="Arah Explorable—Forgotten Path">Arah 3</td><td bit="11" title="Arah Explorable—Seer Path">Arah 4</td></tr>
+				</table>
+			</div>
+		</div>
+		<!-- Row End -->
+		<hr>
+		<!-- AC -->
+		<div id="AC_Skins" data-achievement_id="1725"></div>
+		<!-- CM -->
+		<div id="CM_Skins" data-achievement_id="1723"></div>
+		<!-- TA -->
+		<div id="TA_Skins" data-achievement_id="1721"></div>
+		<!-- SE -->
+		<div id="SE_Skins" data-achievement_id="1722"></div>
+		<!-- CoF -->
+		<div id="CoF_Skins" data-achievement_id="1714"></div>
+		<!-- HotW -->
+		<div id="HotW_Skins" data-achievement_id="1718"></div>
+		<!-- CoE -->
+		<div id="CoE_Skins" data-achievement_id="1719"></div>
+		<!-- Arah -->
+		<div id="Arah_Skins" data-achievement_id="1724"></div>
+	</div>
+  </body>
+</html>
